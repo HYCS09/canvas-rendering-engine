@@ -1,15 +1,18 @@
 import { useEffect, useRef } from 'react'
 import './App.css'
-import { Application, Graphics, Container, RendererType } from './lib'
+import { Application, Graphics, Container } from 'pixi.js-legacy'
 
 function App() {
   const appRef = useRef<Application>()
   useEffect(() => {
     appRef.current = new Application({
-      rendererType: RendererType.Canvas,
       view: document.getElementById('canvas') as HTMLCanvasElement,
-      backgroundColor: '#aaaaaa'
+      backgroundColor: '#ffffff',
+      forceCanvas: true
     })
+
+    // @ts-ignore
+    globalThis.__PIXI_APP__ = appRef.current
   }, [])
 
   useEffect(() => {
