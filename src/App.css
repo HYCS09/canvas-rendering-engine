@@ -1,0 +1,16 @@
+.whiteboard-editor:focus {
+  outline: none;
+}
+body {
+  overflow: hidden;
+  background-color: #d0d4d6;
+}
+
+body,
+html,
+
+body,
+html{
+  padding: 0;
+  margin: 0;
+}
