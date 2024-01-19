@@ -1,6 +1,6 @@
 export class FillStyle {
   public color = '#ffffff'
-  public alpha = 1.0
+  public alpha = 1
   public visible = false
 
   constructor() {

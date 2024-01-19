@@ -4,27 +4,31 @@ import { Renderer } from './Renderer'
 
 export class CanvasRenderer extends Renderer {
   public ctx: CanvasRenderingContext2D
-  private background: string | undefined
+  private backgroundColor: string
+  private backgroundAlpha: number
   constructor(options: IApplicationOptions) {
     super(options)
-    const { backgroundColor } = options
-    this.background = backgroundColor
+    const { backgroundColor = '#000000', backgroundAlpha = 1 } = options
+    this.backgroundColor = backgroundColor
+    this.backgroundAlpha = backgroundAlpha
     this.ctx = this.canvasEle.getContext('2d') as CanvasRenderingContext2D
   }
   public render(container: Container) {
     container.updateTransform()
+    const ctx = this.ctx
 
-    this.ctx.save()
+    ctx.save()
 
-    this.ctx.clearRect(0, 0, this.screen.width, this.screen.height)
+    ctx.clearRect(0, 0, this.screen.width, this.screen.height)
 
-    if (this.background) {
-      this.ctx.fillStyle = this.background
-      this.ctx.fillRect(0, 0, this.screen.width, this.screen.height)
+    if (this.backgroundColor) {
+      ctx.globalAlpha = this.backgroundAlpha
+      ctx.fillStyle = this.backgroundColor
+      ctx.fillRect(0, 0, this.screen.width, this.screen.height)
     }
 
     container.renderCanvasRecursive(this)
 
-    this.ctx.restore()
+    ctx.restore()
   }
 }
