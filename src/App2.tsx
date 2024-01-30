@@ -212,7 +212,7 @@ function App() {
         width={width}
         height={height}
         id='auxiliaryCanvas'
-        style={{ position: 'absolute' }}
+        style={{ position: 'absolute', pointerEvents: 'none' }}
       ></canvas>
       <canvas id='canvas' width={width} height={height}></canvas>
     </div>

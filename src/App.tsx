@@ -36,6 +36,19 @@ function App() {
   }, [])
 
   useEffect(() => {
+    const g1 = new Graphics().beginFill('green').drawRect(200, 200, 200, 200)
+    const g2 = new Graphics().beginFill('black').drawRect(200, 200, 100, 100)
+    const g3 = new Graphics().beginFill('pink').drawRect(250, 250, 100, 100)
+    const c = new Container()
+    c.addChild(g2)
+    c.addChild(g3)
+
+    appRef.current?.stage.addChild(g1)
+    appRef.current?.stage.addChild(c)
+  }, [])
+
+  useEffect(() => {
+    return
     // 完整的路径测试代码
 
     const path = new Graphics()
@@ -225,7 +238,7 @@ function App() {
         width={width}
         height={height}
         id='auxiliaryCanvas'
-        style={{ position: 'absolute' }}
+        style={{ position: 'absolute', pointerEvents: 'none' }}
       ></canvas>
       <canvas id='canvas' width={width} height={height}></canvas>
     </div>

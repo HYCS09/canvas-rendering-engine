@@ -10,6 +10,7 @@
     "lint:fix": "eslint src --fix"
   },
   "dependencies": {
+    "antd": "^5.12.8",
     "eventemitter3": "^5.0.1",
     "lodash": "^4.17.21",
     "pixi.js-legacy": "^7.3.2",

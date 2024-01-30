@@ -589,5 +589,133 @@ export class Graphics extends Container {
         }
       }
     }
+
+    this.renderOnOffscreenCanvas(render)
+  }
+
+  /**
+   * 在离屏canvas元素上再次绘制一次
+   */
+  private renderOnOffscreenCanvas(render: CanvasRenderer) {
+    this.startPoly()
+
+    const offscreenCtx = render.offscreenCtx
+    const { a, b, c, d, tx, ty } = this.transform.worldTransform
+
+    offscreenCtx.setTransform(a, b, c, d, tx, ty)
+
+    const graphicsData = this._geometry.graphicsData
+
+    offscreenCtx.fillStyle = this.uniqueColor // 填充色为被赋予的独一无二的颜色
+    offscreenCtx.globalAlpha = 1 // 所有填充的透明度都是1
+
+    // 用map将uniqueColor和要绘制的图形对应起来
+    if (!Container.hitTestMap[this.uniqueColor]) {
+      Container.hitTestMap[this.uniqueColor] = this
+    }
+
+    for (let i = 0; i < graphicsData.length; i++) {
+      const data = graphicsData[i]
+      const { fillStyle, shape } = data
+
+      offscreenCtx.beginPath()
+
+      if (shape instanceof Rectangle) {
+        const rectangle = shape
+        const { x, y, width, height } = rectangle
+        if (fillStyle.visible) {
+          offscreenCtx.fillRect(x, y, width, height)
+        }
+      }
+
+      if (shape instanceof Circle) {
+        const circle = shape
+        const { x, y, radius } = circle
+
+        offscreenCtx.arc(x, y, radius, 0, 2 * Math.PI)
+
+        if (fillStyle.visible) {
+          offscreenCtx.fill()
+        }
+      }
+
+      if (shape instanceof RoundedRectangle) {
+        const roundedRectangle = shape
+        const { x, y, width, height, radius } = roundedRectangle
+
+        offscreenCtx.moveTo(x + radius, y)
+        offscreenCtx.arc(
+          x + radius,
+          y + radius,
+          radius,
+          Math.PI * 1.5,
+          Math.PI,
+          true
+        )
+        offscreenCtx.lineTo(x, y + height - radius)
+        offscreenCtx.arc(
+          x + radius,
+          y + height - radius,
+          radius,
+          Math.PI,
+          Math.PI / 2,
+          true
+        )
+        offscreenCtx.lineTo(x + width - radius, y + height)
+        offscreenCtx.arc(
+          x + width - radius,
+          y + height - radius,
+          radius,
+          Math.PI / 2,
+          0,
+          true
+        )
+        offscreenCtx.lineTo(x + width, y + radius)
+        offscreenCtx.arc(
+          x + width - radius,
+          y + radius,
+          radius,
+          0,
+          Math.PI * 1.5,
+          true
+        )
+        offscreenCtx.closePath()
+
+        if (fillStyle.visible) {
+          offscreenCtx.fill()
+        }
+      }
+
+      if (shape instanceof Ellipse) {
+        const ellipse = shape
+        const { x, y, radiusX, radiusY } = ellipse
+
+        offscreenCtx.ellipse(x, y, radiusX, radiusY, 0, 0, Math.PI * 2)
+
+        if (fillStyle.visible) {
+          offscreenCtx.fill()
+        }
+      }
+
+      if (shape instanceof Polygon) {
+        const polygon = shape
+
+        const { points, closeStroke } = polygon
+
+        offscreenCtx.moveTo(points[0], points[1])
+
+        for (let i = 2; i < points.length; i += 2) {
+          offscreenCtx.lineTo(points[i], points[i + 1])
+        }
+
+        if (closeStroke) {
+          offscreenCtx.closePath()
+        }
+
+        if (fillStyle.visible) {
+          offscreenCtx.fill()
+        }
+      }
+    }
   }
 }

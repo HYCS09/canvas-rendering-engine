@@ -1,10 +1,13 @@
 import { DisplayObject } from './DisplayObject'
 import { Transform } from '@/math'
 import { CanvasRenderer } from '@/renderer/CanvasRenderer'
+import { randomHexCreator } from '@/utils'
 
 export class Container extends DisplayObject {
   public sortDirty = false
   public readonly children: Container[] = []
+  public static hitTestMap: { [anyKey: string]: Container } = {}
+  public uniqueColor: string = randomHexCreator()
 
   constructor() {
     super()
