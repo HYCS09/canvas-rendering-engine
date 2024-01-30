@@ -1,5 +1,5 @@
 import { DisplayObject } from './DisplayObject'
-import { Transform } from '@/math'
+import { Point, Transform } from '@/math'
 import { CanvasRenderer } from '@/renderer/CanvasRenderer'
 
 export class Container extends DisplayObject {
@@ -21,6 +21,7 @@ export class Container extends DisplayObject {
    * 递归渲染以自身为根的整棵节点树
    */
   public renderCanvasRecursive(render: CanvasRenderer) {
+    // 如果visible为false，那么自身以及自身的所有子节点都不用渲染
     if (!this.visible) {
       return
     }
@@ -84,5 +85,8 @@ export class Container extends DisplayObject {
 
     this.children.sort((a, b) => a.zIndex - b.zIndex)
     this.sortDirty = false
+  }
+  public containsPoint(p: Point) {
+    return false
   }
 }

@@ -31,6 +31,14 @@ export abstract class DisplayObject extends Eventemitter {
     return this.transform.position
   }
 
+  get localTransform() {
+    return this.transform.localTransform
+  }
+
+  get worldTransform() {
+    return this.transform.worldTransform
+  }
+
   get x(): number {
     return this.position.x
   }

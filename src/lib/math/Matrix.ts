@@ -1,3 +1,5 @@
+import { Point } from './Point'
+
 export class Matrix {
   public a: number
   public b: number
@@ -39,6 +41,48 @@ export class Matrix {
     this.ty = b0 * tx1 + d0 * ty1 + ty0
 
     return this
+  }
+
+  /**
+   * 对某个点应用当前的变换矩阵
+   * @param p 某个点
+   * @returns {Point} 点p应用当前变换矩阵后得到的一个新的点
+   */
+  apply(p: Point) {
+    const newPos = new Point()
+
+    const x = p.x
+    const y = p.y
+
+    newPos.x = this.a * x + this.c * y + this.tx
+    newPos.y = this.b * x + this.d * y + this.ty
+
+    return newPos
+  }
+
+  /**
+   * 对某个点应用当前的变换矩阵的逆矩阵
+   * @param p 某个点
+   * @returns {Point} 点p应用当前变换矩阵的逆矩阵后得到的一个新的点
+   */
+  applyInverse(p: Point) {
+    const newPos = new Point()
+
+    const id = 1 / (this.a * this.d + this.c * -this.b)
+
+    const x = p.x
+    const y = p.y
+
+    newPos.x =
+      this.d * id * x +
+      -this.c * id * y +
+      (this.ty * this.c - this.tx * this.d) * id
+    newPos.y =
+      this.a * id * y +
+      -this.b * id * x +
+      (-this.ty * this.a + this.tx * this.b) * id
+
+    return newPos
   }
 
   /**

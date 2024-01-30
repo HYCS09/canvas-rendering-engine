@@ -15,7 +15,16 @@ export class Rectangle extends Shape {
     this.width = width
     this.height = height
   }
-  public contains(point: Point): boolean {
-    return true
+  public contains(p: Point): boolean {
+    if (
+      p.x > this.x &&
+      p.x < this.x + this.width &&
+      p.y > this.y &&
+      p.y < this.y + this.height
+    ) {
+      return true
+    } else {
+      return false
+    }
   }
 }

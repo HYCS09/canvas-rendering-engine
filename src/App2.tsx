@@ -42,6 +42,8 @@ function App() {
       .arcTo(700, 100, 800, 300, 150)
       .quadraticCurveTo(900, 100, 1100, 200)
       .closePath()
+    path.cursor = 'pointer'
+    path.eventMode = 'static'
 
     appRef.current?.stage.addChild(path)
   }, [])
@@ -212,7 +214,7 @@ function App() {
         width={width}
         height={height}
         id='auxiliaryCanvas'
-        style={{ position: 'absolute' }}
+        style={{ position: 'absolute', pointerEvents: 'none' }}
       ></canvas>
       <canvas id='canvas' width={width} height={height}></canvas>
     </div>

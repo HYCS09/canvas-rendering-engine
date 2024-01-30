@@ -10,7 +10,8 @@ import {
   Circle,
   Ellipse,
   RoundedRectangle,
-  Polygon
+  Polygon,
+  Point
 } from '@/math'
 import { getQuadraticBezierLength, getBezierLength } from './utils'
 
@@ -456,7 +457,7 @@ export class Graphics extends Container {
     this.startPoly()
 
     const ctx = render.ctx
-    const { a, b, c, d, tx, ty } = this.transform.worldTransform
+    const { a, b, c, d, tx, ty } = this.worldTransform
 
     ctx.setTransform(a, b, c, d, tx, ty)
 
@@ -589,5 +590,9 @@ export class Graphics extends Container {
         }
       }
     }
+  }
+
+  public containsPoint(p: Point): boolean {
+    return this._geometry.containsPoint(p)
   }
 }

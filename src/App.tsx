@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import './App.css'
 import { Application, Graphics, Container, RendererType } from './lib'
 import { drawAuxiliaryLine } from './utils'
+import { message } from 'antd'
 
 const width = 1200
 const height = 700
@@ -38,6 +39,28 @@ function App() {
   useEffect(() => {
     // 完整的路径测试代码
 
+    const c = new Container()
+    const redRect = new Graphics()
+      .beginFill('red')
+      .drawRect(400, 300, 200, 200)
+      .on('click', () => {
+        message.success(<span style={{ color: 'red' }}>点击了红色的矩形</span>)
+      })
+    c.addChild(redRect)
+    const bluePoly = new Graphics()
+      .beginFill('blue', 0.7)
+      .moveTo(100, 200)
+      .lineTo(400, 0)
+      .lineTo(1000, 300)
+      .lineTo(900, 600)
+      .closePath()
+      .on('click', () => {
+        message.success(
+          <span style={{ color: 'blue' }}>点击了蓝色的多边形</span>
+        )
+      })
+    c.addChild(bluePoly)
+
     const path = new Graphics()
       .lineStyle(3, 'purple')
       .beginFill('pink', 0.6)
@@ -49,8 +72,22 @@ function App() {
       .arcTo(700, 100, 800, 300, 150)
       .quadraticCurveTo(900, 100, 1100, 200)
       .closePath()
+      .on('click', () => {
+        message.success(
+          <span style={{ color: 'pink' }}>点击了粉色的多边形</span>
+        )
+      })
 
+    const greenCircle = new Graphics()
+      .beginFill('green')
+      .drawCircle(200, 400, 200)
+      .on('click', () => {
+        message.success(<span style={{ color: 'green' }}>点击了绿色的圆</span>)
+      })
+
+    appRef.current?.stage.addChild(c)
     appRef.current?.stage.addChild(path)
+    appRef.current?.stage.addChild(greenCircle)
   }, [])
 
   useEffect(() => {
@@ -225,7 +262,7 @@ function App() {
         width={width}
         height={height}
         id='auxiliaryCanvas'
-        style={{ position: 'absolute' }}
+        style={{ position: 'absolute', pointerEvents: 'none' }}
       ></canvas>
       <canvas id='canvas' width={width} height={height}></canvas>
     </div>
