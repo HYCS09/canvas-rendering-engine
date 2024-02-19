@@ -1,9 +1,14 @@
 import { useEffect, useRef } from 'react'
 import './App.css'
-import { Application, Graphics, Container, RendererType } from './lib'
+import {
+  Application,
+  Graphics,
+  Container,
+  RendererType,
+  Rectangle
+} from './lib'
 import { drawAuxiliaryLine } from './utils'
 import { message } from 'antd'
-import { Rectangle } from '@/math'
 
 const width = 1200
 const height = 700
@@ -25,9 +30,10 @@ const height = 700
 function App() {
   const appRef = useRef<Application>()
   useEffect(() => {
+    const view = document.getElementById('canvas') as HTMLCanvasElement
     appRef.current = new Application({
       rendererType: RendererType.Canvas,
-      view: document.getElementById('canvas') as HTMLCanvasElement,
+      view,
       backgroundColor: '#aaaaaa',
       backgroundAlpha: 0.1
     })

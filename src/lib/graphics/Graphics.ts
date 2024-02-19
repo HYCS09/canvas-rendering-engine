@@ -1,6 +1,6 @@
 import { Container } from '@/display'
-import { LineStyle } from '@/graphics/style/LineStyle'
-import { FillStyle } from '@/graphics/style/FillStyle'
+import { LineStyle } from './style/LineStyle'
+import { FillStyle } from './style/FillStyle'
 import { ILineStyleOptions } from '@/types'
 import { GraphicsGeometry } from './GraphicsGeometry'
 import { CanvasRenderer } from '@/renderer/CanvasRenderer'

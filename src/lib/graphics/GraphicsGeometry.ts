@@ -1,4 +1,4 @@
-import { Shape } from '@/math/shapes/Shape'
+import { Shape } from '@/math'
 import { FillStyle } from './style/FillStyle'
 import { LineStyle } from './style/LineStyle'
 import { GraphicsData } from './GraphicsData'

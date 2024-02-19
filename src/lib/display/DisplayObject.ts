@@ -7,6 +7,7 @@ import {
 } from '@/math'
 import { default as Eventemitter } from 'eventemitter3'
 import { Container } from './Container'
+import { Cursor, FederatedEventMap } from '@/events'
 
 export abstract class DisplayObject extends Eventemitter {
   public alpha = 1
@@ -16,6 +17,7 @@ export abstract class DisplayObject extends Eventemitter {
   protected _zIndex = 0
   public parent: Container | null = null
   public hitArea: Shape | null = null
+  public cursor: Cursor = 'auto'
 
   public updateTransform() {
     const parentTransform = this.parent?.transform || new Transform()
@@ -88,5 +90,32 @@ export abstract class DisplayObject extends Eventemitter {
 
   set angle(value: number) {
     this.transform.rotation = value * DEG_TO_RAD
+  }
+
+  public addEventListener<K extends keyof FederatedEventMap>(
+    type: K,
+    listener: (e: FederatedEventMap[K]) => any,
+    options?: boolean | AddEventListenerOptions
+  ) {
+    const capture =
+      (typeof options === 'boolean' && options) ||
+      (typeof options === 'object' && options.capture)
+
+    const realType = capture ? `${type}capture` : type
+
+    if (typeof options === 'object' && options.once) {
+      this.once(realType, listener)
+    } else {
+      this.on(realType, listener)
+    }
+  }
+
+  public removeEventListener<K extends keyof FederatedEventMap>(
+    type: K,
+    listener: (e: FederatedEventMap[K]) => any,
+    capture?: boolean
+  ) {
+    const realType = capture ? `${type}capture` : type
+    this.off(realType, listener)
   }
 }
