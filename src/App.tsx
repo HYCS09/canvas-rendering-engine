@@ -3,6 +3,7 @@ import './App.css'
 import { Application, Graphics, Container, RendererType } from './lib'
 import { drawAuxiliaryLine } from './utils'
 import { message } from 'antd'
+import { Rectangle } from '@/math'
 
 const width = 1200
 const height = 700
@@ -77,6 +78,8 @@ function App() {
           <span style={{ color: 'pink' }}>点击了粉色的多边形</span>
         )
       })
+
+    path.hitArea = new Rectangle(1000, 100, 100, 100)
 
     const greenCircle = new Graphics()
       .beginFill('green')

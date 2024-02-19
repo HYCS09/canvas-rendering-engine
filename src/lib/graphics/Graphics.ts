@@ -593,6 +593,11 @@ export class Graphics extends Container {
   }
 
   public containsPoint(p: Point): boolean {
+    // 如果设置了hitArea则只判断hitArea
+    if (this.hitArea) {
+      return this.hitArea.contains(p)
+    }
+
     return this._geometry.containsPoint(p)
   }
 }

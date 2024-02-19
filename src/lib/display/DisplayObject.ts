@@ -1,4 +1,10 @@
-import { DEG_TO_RAD, ObservablePoint, RAD_TO_DEG, Transform } from '@/math'
+import {
+  DEG_TO_RAD,
+  ObservablePoint,
+  RAD_TO_DEG,
+  Shape,
+  Transform
+} from '@/math'
 import { default as Eventemitter } from 'eventemitter3'
 import { Container } from './Container'
 
@@ -9,6 +15,7 @@ export abstract class DisplayObject extends Eventemitter {
   public transform = new Transform()
   protected _zIndex = 0
   public parent: Container | null = null
+  public hitArea: Shape | null = null
 
   public updateTransform() {
     const parentTransform = this.parent?.transform || new Transform()
