@@ -29,7 +29,7 @@ export class ObservablePoint {
   set(x = 0, y = x) {
     this._x = x
     this._y = y
-    this.cb()
+    this.cb(this._x, this._y)
   }
 
   get x(): number {
@@ -39,7 +39,7 @@ export class ObservablePoint {
   set x(value: number) {
     if (this._x !== value) {
       this._x = value
-      this.cb()
+      this.cb(this._x, this._y)
     }
   }
 
@@ -50,7 +50,7 @@ export class ObservablePoint {
   set y(value: number) {
     if (this._y !== value) {
       this._y = value
-      this.cb()
+      this.cb(this._x, this._y)
     }
   }
 }

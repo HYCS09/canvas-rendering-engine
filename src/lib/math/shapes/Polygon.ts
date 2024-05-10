@@ -10,6 +10,15 @@ export class Polygon extends Shape {
     super()
     this.points = points
   }
+
+  /**
+   * 清空数据
+   */
+  public reset() {
+    this.points.length = 0
+    this.closeStroke = false
+  }
+
   /**
    *
    * @param px 待检测点的x坐标

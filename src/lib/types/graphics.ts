@@ -1,13 +1,14 @@
-import { LineCap, LineJoin } from '@/enums'
+import { LINE_CAP, LINE_JOIN } from '@/enums'
 
 export interface IFillStyleOptions {
-  color?: string
+  color?: string | number
   alpha?: number
   visible?: boolean
 }
 
 export interface ILineStyleOptions extends IFillStyleOptions {
   width?: number
-  cap?: LineCap
-  join?: LineJoin
+  cap?: LINE_CAP
+  join?: LINE_JOIN
+  miterLimit?: number
 }

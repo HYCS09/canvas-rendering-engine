@@ -1,8 +1,3 @@
-export enum RendererType {
-  WebGl = 'webgl',
-  Canvas = 'canvas'
-}
-
 export enum ShapeType {
   Rectangle = 'rectangle',
   Polygon = 'polygon',
@@ -11,14 +6,14 @@ export enum ShapeType {
   RoundedRectangle = 'rounded rectangle'
 }
 
-export enum LineCap {
-  Butt = 'butt',
-  Round = 'round',
-  Square = 'square'
+export enum LINE_CAP {
+  BUTT = 'butt',
+  ROUND = 'round',
+  SQUARE = 'square'
 }
 
-export enum LineJoin {
-  Miter = 'miter',
-  Bevel = 'bevel',
-  Round = 'round'
+export enum LINE_JOIN {
+  MITER = 'miter',
+  BEVEL = 'bevel',
+  ROUND = 'round'
 }

@@ -7,10 +7,16 @@ export class CanvasRenderer extends Renderer {
   private backgroundColor: string
   private backgroundAlpha: number
   constructor(options: IApplicationOptions) {
+    console.log(
+      '正在使用 %c canvas2D ',
+      'color: #05aa6d; background-color: #ffffff;font-size: 20px;',
+      '渲染'
+    )
+
     super(options)
-    const { backgroundColor = '#000000', backgroundAlpha = 1 } = options
-    this.backgroundColor = backgroundColor
-    this.backgroundAlpha = backgroundAlpha
+    const { backgroundColor, backgroundAlpha } = options
+    this.backgroundColor = backgroundColor as string
+    this.backgroundAlpha = backgroundAlpha as number
     this.ctx = this.canvasEle.getContext('2d') as CanvasRenderingContext2D
   }
   public render(container: Container) {
@@ -21,11 +27,10 @@ export class CanvasRenderer extends Renderer {
 
     ctx.clearRect(0, 0, this.screen.width, this.screen.height)
 
-    if (this.backgroundColor) {
-      ctx.globalAlpha = this.backgroundAlpha
-      ctx.fillStyle = this.backgroundColor
-      ctx.fillRect(0, 0, this.screen.width, this.screen.height)
-    }
+    // 绘制background
+    ctx.globalAlpha = this.backgroundAlpha
+    ctx.fillStyle = this.backgroundColor
+    ctx.fillRect(0, 0, this.screen.width, this.screen.height)
 
     container.renderCanvasRecursive(this)
 

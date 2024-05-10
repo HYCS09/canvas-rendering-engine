@@ -14,33 +14,59 @@ import {
   Point
 } from '@/math'
 import { getQuadraticBezierLength, getBezierLength } from './utils'
+import { WebGLRenderer } from '@/renderer/WebGLRenderer'
+import { normalizeColor } from './style/utils'
+import { toRgbaLittleEndian } from '@/utils/color'
+import { Batch } from '@/batch'
 
 export class Graphics extends Container {
   private _lineStyle = new LineStyle()
   private _fillStyle = new FillStyle()
   private _geometry = new GraphicsGeometry()
   private currentPath = new Polygon()
+  private worldId = 0
+  private shapeId = 0
+  private processedVertices = new Float32Array()
+  private batches: Batch[] = []
 
   constructor() {
     super()
   }
 
-  public lineStyle(width: number, color?: string, alpha?: number): this
+  public lineStyle(width: number, color?: string | number, alpha?: number): this
   public lineStyle(options: ILineStyleOptions): this
   public lineStyle(
     options: ILineStyleOptions | number,
-    color: string = '0x000000',
+    color: string | number = '#000000',
     alpha: number = 1
   ) {
     this.startPoly()
 
     if (typeof options === 'object') {
+      if (!options.color) {
+        options.color = '#000000'
+      } else {
+        options.color = normalizeColor(options.color)
+      }
+      const miterLimit = options.miterLimit
+      if (miterLimit) {
+        if (miterLimit <= 0 || miterLimit === Infinity) {
+          throw new Error(`miterLimit：${miterLimit}不合法`)
+        }
+      }
       Object.assign(this._lineStyle, options)
     } else {
-      const opts: ILineStyleOptions = { width: options, color, alpha }
+      const opts: ILineStyleOptions = {
+        width: options,
+        color: normalizeColor(color),
+        alpha
+      }
       Object.assign(this._lineStyle, opts)
     }
-    this._lineStyle.visible = true
+
+    if (this._lineStyle.alpha > 0) {
+      this._lineStyle.visible = true
+    }
     return this
   }
 
@@ -60,13 +86,15 @@ export class Graphics extends Container {
   /**
    * 清空已有的path，开始新的path
    */
-  protected startPoly(): void {
+  protected startPoly() {
     if (this.currentPath.points.length > 2) {
       // 如果点的个数大于或等于2，那么就算一个有效的path，需要将其画出来
       this.drawShape(this.currentPath)
+      this.currentPath = new Polygon()
+      return
     }
 
-    this.currentPath = new Polygon()
+    this.currentPath.reset()
   }
 
   /**
@@ -74,11 +102,11 @@ export class Graphics extends Container {
    * @param color 填充颜色
    * @param alpha 不透明度
    */
-  public beginFill(color = '#000000', alpha = 1) {
+  public beginFill(color: string | number = '#000000', alpha = 1) {
     // 在填充参数变化之前，先将已有的path画出来
     this.startPoly()
 
-    this._fillStyle.color = color
+    this._fillStyle.color = normalizeColor(color)
     this._fillStyle.alpha = alpha
 
     if (this._fillStyle.alpha > 0) {
@@ -106,7 +134,7 @@ export class Graphics extends Container {
    * @param width 宽度
    * @param height 高度
    */
-  public drawRect(x: number, y: number, width: number, height: number): this {
+  public drawRect(x: number, y: number, width: number, height: number) {
     return this.drawShape(new Rectangle(x, y, width, height))
   }
 
@@ -453,10 +481,10 @@ export class Graphics extends Container {
   /**
    * 调用canvas API绘制自身
    */
-  protected renderCanvas(render: CanvasRenderer) {
+  protected renderCanvas(renderer: CanvasRenderer) {
     this.startPoly()
 
-    const ctx = render.ctx
+    const ctx = renderer.ctx
     const { a, b, c, d, tx, ty } = this.worldTransform
 
     ctx.setTransform(a, b, c, d, tx, ty)
@@ -592,7 +620,91 @@ export class Graphics extends Container {
     }
   }
 
-  public containsPoint(p: Point): boolean {
+  private buildBatches() {
+    if (this.shapeId === this._geometry.shapeIndex) {
+      return
+    }
+
+    this.shapeId = this._geometry.shapeIndex
+
+    this.worldId = -1
+
+    this.processedVertices = new Float32Array(this._geometry.vertices.length)
+
+    const batchParts = this._geometry.batchParts
+    const gvi = this._geometry.vertexIndices.data
+
+    this.batches.length = batchParts.length
+
+    for (let i = 0; i < batchParts.length; i++) {
+      const { style, vertexStart, vertexCount, indexStart, indexCount } =
+        batchParts[i]
+
+      const vertices = new Float32Array(
+        this.processedVertices.buffer,
+        vertexStart * Float32Array.BYTES_PER_ELEMENT * 2,
+        vertexCount * 2
+      )
+
+      const vertexIndices = new Uint16Array(
+        gvi.buffer,
+        indexStart * Uint16Array.BYTES_PER_ELEMENT,
+        indexCount
+      )
+
+      const { color, alpha } = style
+
+      const rgba = toRgbaLittleEndian(color, alpha * this.worldAlpha)
+
+      this.batches[i] = {
+        vertices,
+        vertexIndices,
+        rgba
+      }
+    }
+  }
+
+  /**
+   * 计算出应用了worldTransform后的顶点的位置
+   */
+  private updateVertices() {
+    if (this.worldId === this.transform.worldId) {
+      return
+    }
+
+    this.worldId = this.transform.worldId
+
+    const { a, b, c, d, tx, ty } = this.worldTransform
+
+    const vertices = this._geometry.vertices.data
+
+    for (let i = 0; i < vertices.length; i += 2) {
+      const x = vertices[i]
+      const y = vertices[i + 1]
+
+      this.processedVertices[i] = a * x + c * y + tx
+      this.processedVertices[i + 1] = b * x + d * y + ty
+    }
+  }
+
+  /**
+   * 使用webGL绘制自身
+   */
+  protected renderWebGL(renderer: WebGLRenderer) {
+    this.startPoly()
+
+    this._geometry.buildVerticesAndTriangulate()
+
+    this.buildBatches()
+
+    this.updateVertices()
+
+    for (let i = 0; i < this.batches.length; i++) {
+      renderer.batchPool.push(this.batches[i])
+    }
+  }
+
+  public containsPoint(p: Point) {
     // 如果设置了hitArea则只判断hitArea
     if (this.hitArea) {
       return this.hitArea.contains(p)

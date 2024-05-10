@@ -1,8 +1,6 @@
-import { RendererType } from '@/enums'
-
 export interface IApplicationOptions {
-  rendererType?: RendererType // 这里留个坑，未来可能会实现webgl render
+  prefer?: 'canvas2D' | 'webGL' | 'webGPU' // 优先使用哪种renderer
   view: HTMLCanvasElement
-  backgroundColor?: string
+  backgroundColor?: string | number
   backgroundAlpha?: number
 }

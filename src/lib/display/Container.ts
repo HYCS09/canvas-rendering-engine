@@ -1,6 +1,7 @@
 import { DisplayObject } from './DisplayObject'
 import { Point, Transform } from '@/math'
 import { CanvasRenderer } from '@/renderer/CanvasRenderer'
+import { WebGLRenderer } from '@/renderer/WebGLRenderer'
 
 export class Container extends DisplayObject {
   public sortDirty = false
@@ -11,26 +12,47 @@ export class Container extends DisplayObject {
   }
 
   /**
-   * 渲染自身，在container上面没有东西要渲染，所以这个函数的内容为空
+   * 使用canvas2D，渲染自身，在container上面没有东西要渲染，所以这个函数的内容为空
    */
-  protected renderCanvas(render: CanvasRenderer) {
+  protected renderCanvas(renderer: CanvasRenderer) {
     // nothing
   }
 
   /**
-   * 递归渲染以自身为根的整棵节点树
+   * 使用webGL，渲染自身，在container上面没有东西要渲染，所以这个函数的内容为空
    */
-  public renderCanvasRecursive(render: CanvasRenderer) {
+  protected renderWebGL(renderer: WebGLRenderer) {
+    // nothing
+  }
+
+  /**
+   * 使用canvas2D，递归渲染以自身为根的整棵节点树
+   */
+  public renderCanvasRecursive(renderer: CanvasRenderer) {
     // 如果visible为false，那么自身以及自身的所有子节点都不用渲染
     if (!this.visible) {
       return
     }
 
-    this.renderCanvas(render)
+    this.renderCanvas(renderer)
 
     for (let i = 0; i < this.children.length; i++) {
-      const child = this.children[i]
-      child.renderCanvasRecursive(render)
+      this.children[i].renderCanvasRecursive(renderer)
+    }
+  }
+
+  /**
+   * 使用webGL，递归渲染以自身为根的整棵节点树
+   */
+  public renderWebGLRecursive(renderer: WebGLRenderer) {
+    if (!this.visible) {
+      return
+    }
+
+    this.renderWebGL(renderer)
+
+    for (let i = 0; i < this.children.length; i++) {
+      this.children[i].renderWebGLRecursive(renderer)
     }
   }
 
@@ -41,24 +63,16 @@ export class Container extends DisplayObject {
     this.sortChildren()
 
     const parentTransform = this.parent?.transform || new Transform()
-    const hasWorldTransformChanged =
-      this.transform.updateTransform(parentTransform)
+    this.transform.updateTransform(parentTransform)
 
-    this.worldAlpha = (this.parent?.worldAlpha || 1) * this.alpha
+    this.worldAlpha = (this.parent?.worldAlpha ?? 1) * this.alpha
 
     if (this.worldAlpha <= 0 || !this.visible) {
       return
     }
 
-    for (let i = 0, j = this.children.length; i < j; ++i) {
-      const child = this.children[i]
-
-      // 若当前元素的worldTransform改变了，那么其子元素的worldTransform需要重新计算
-      if (hasWorldTransformChanged) {
-        child.transform.shouldUpdateWorldTransform = true
-      }
-
-      child.updateTransform()
+    for (let i = 0; i < this.children.length; i++) {
+      this.children[i].updateTransform()
     }
   }
 

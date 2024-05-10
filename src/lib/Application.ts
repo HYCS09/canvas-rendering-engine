@@ -1,6 +1,6 @@
 import { Renderer } from './renderer/Renderer'
 import { IApplicationOptions } from '@/types'
-import { getRenderer } from './utils'
+import { getRenderer, normalizeOptions } from './utils'
 import { Container } from '@/display'
 import { EventSystem } from '@/events'
 
@@ -11,6 +11,8 @@ export class Application {
   private eventSystem: EventSystem
 
   constructor(options: IApplicationOptions) {
+    normalizeOptions(options)
+
     const { view } = options
     this.view = view
 
