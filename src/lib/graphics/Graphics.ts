@@ -14,23 +14,22 @@ import {
   Point
 } from '@/math'
 import { getQuadraticBezierLength, getBezierLength } from './utils'
-import { WebGLRenderer } from '@/renderer/WebGLRenderer'
 import { normalizeColor } from './style/utils'
 import { toRgbaLittleEndian } from '@/utils/color'
-import { Batch } from '@/batch'
+import { batchPool } from '@/batch'
+import { GraphicsBatch } from './GraphicsBatch'
+import { BatchRenderer } from '@/renderer/BatchRenderer'
 
 export class Graphics extends Container {
   private _lineStyle = new LineStyle()
   private _fillStyle = new FillStyle()
-  private _geometry = new GraphicsGeometry()
+  public geometry = new GraphicsGeometry()
   private currentPath = new Polygon()
-  private worldId = 0
-  private shapeId = 0
-  private processedVertices = new Float32Array()
-  private batches: Batch[] = []
 
   constructor() {
     super()
+
+    this.type = 'graphics'
   }
 
   public lineStyle(width: number, color?: string | number, alpha?: number): this
@@ -75,11 +74,16 @@ export class Graphics extends Container {
   }
 
   protected drawShape(shape: Shape) {
-    this._geometry.drawShape(
+    this.geometry.drawShape(
       shape,
       this._fillStyle.clone(),
       this._lineStyle.clone()
     )
+
+    if (this.onStage) {
+      this.emit('need-rebuild-arr')
+    }
+
     return this
   }
 
@@ -470,7 +474,12 @@ export class Graphics extends Container {
   }
 
   public clear() {
-    this._geometry.clear()
+    if (this.onStage && this.geometry.graphicsData.length) {
+      this.emit('need-rebuild-arr')
+    }
+
+    this.batchCount = 0
+    this.geometry.clear()
     this._lineStyle.reset()
     this._fillStyle.reset()
     this.currentPath = new Polygon()
@@ -489,7 +498,7 @@ export class Graphics extends Container {
 
     ctx.setTransform(a, b, c, d, tx, ty)
 
-    const graphicsData = this._geometry.graphicsData
+    const graphicsData = this.geometry.graphicsData
 
     for (let i = 0; i < graphicsData.length; i++) {
       const data = graphicsData[i]
@@ -620,87 +629,47 @@ export class Graphics extends Container {
     }
   }
 
-  private buildBatches() {
-    if (this.shapeId === this._geometry.shapeIndex) {
-      return
-    }
+  public buildBatches(batchRenderer: BatchRenderer) {
+    this.startPoly()
 
-    this.shapeId = this._geometry.shapeIndex
+    this.worldId = this.transform.worldId
 
-    this.worldId = -1
+    this.geometry.buildVerticesAndTriangulate()
 
-    this.processedVertices = new Float32Array(this._geometry.vertices.length)
-
-    const batchParts = this._geometry.batchParts
-    const gvi = this._geometry.vertexIndices.data
-
-    this.batches.length = batchParts.length
+    const batchParts = this.geometry.batchParts
 
     for (let i = 0; i < batchParts.length; i++) {
       const { style, vertexStart, vertexCount, indexStart, indexCount } =
         batchParts[i]
 
-      const vertices = new Float32Array(
-        this.processedVertices.buffer,
-        vertexStart * Float32Array.BYTES_PER_ELEMENT * 2,
-        vertexCount * 2
-      )
-
-      const vertexIndices = new Uint16Array(
-        gvi.buffer,
-        indexStart * Uint16Array.BYTES_PER_ELEMENT,
-        indexCount
-      )
-
       const { color, alpha } = style
 
       const rgba = toRgbaLittleEndian(color, alpha * this.worldAlpha)
 
-      this.batches[i] = {
-        vertices,
-        vertexIndices,
-        rgba
-      }
+      const batch = batchPool.get(this.type) as GraphicsBatch
+      batch.vertexCount = vertexCount
+      batch.indexCount = indexCount
+      batch.rgba = rgba
+      batch.vertexOffset = vertexStart
+      batch.indexOffset = indexStart
+      batch.graphics = this
+
+      this.batches[i] = batch
+      batchRenderer.addBatch(this.batches[i])
     }
+
+    this.batchCount = batchParts.length
   }
 
-  /**
-   * 计算出应用了worldTransform后的顶点的位置
-   */
-  private updateVertices() {
+  public updateBatches(floatView: Float32Array): void {
     if (this.worldId === this.transform.worldId) {
       return
     }
 
     this.worldId = this.transform.worldId
 
-    const { a, b, c, d, tx, ty } = this.worldTransform
-
-    const vertices = this._geometry.vertices.data
-
-    for (let i = 0; i < vertices.length; i += 2) {
-      const x = vertices[i]
-      const y = vertices[i + 1]
-
-      this.processedVertices[i] = a * x + c * y + tx
-      this.processedVertices[i + 1] = b * x + d * y + ty
-    }
-  }
-
-  /**
-   * 使用webGL绘制自身
-   */
-  protected renderWebGL(renderer: WebGLRenderer) {
-    this.startPoly()
-
-    this._geometry.buildVerticesAndTriangulate()
-
-    this.buildBatches()
-
-    this.updateVertices()
-
-    for (let i = 0; i < this.batches.length; i++) {
-      renderer.batchPool.push(this.batches[i])
+    for (let i = 0; i < this.batchCount; i++) {
+      this.batches[i].updateVertices(floatView)
     }
   }
 
@@ -710,6 +679,6 @@ export class Graphics extends Container {
       return this.hitArea.contains(p)
     }
 
-    return this._geometry.containsPoint(p)
+    return this.geometry.containsPoint(p)
   }
 }

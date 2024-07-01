@@ -10,7 +10,7 @@ function App() {
   useEffect(() => {
     const view = document.getElementById('canvas') as HTMLCanvasElement
     appRef.current = new Application({
-      prefer: 'canvas2D',
+      // prefer: 'canvas2D',
       view,
       backgroundColor: '#aaaaaa',
       backgroundAlpha: 0.3
@@ -18,27 +18,31 @@ function App() {
   }, [])
 
   useEffect(() => {
-    const redRect = new Graphics().beginFill('red').drawRect(400, 300, 200, 200)
-    redRect.cursor = 'pointer'
-    appRef.current?.stage.addChild(redRect)
+    appRef.current?.init().then(() => {
+      const redRect = new Graphics()
+        .beginFill('red')
+        .drawRect(400, 300, 200, 200)
+      redRect.cursor = 'pointer'
+      appRef.current?.stage.addChild(redRect)
 
-    // 添加一个绿色的圆
-    const greenCircle = new Graphics()
-      .beginFill('green')
-      .drawCircle(200, 400, 150)
-    greenCircle.cursor = 'pointer'
-    appRef.current?.stage.addChild(greenCircle)
+      // 添加一个绿色的圆
+      const greenCircle = new Graphics()
+        .beginFill('green')
+        .drawCircle(200, 400, 150)
+      greenCircle.cursor = 'pointer'
+      appRef.current?.stage.addChild(greenCircle)
 
-    const bluePoly = new Graphics()
-      .beginFill('blue', 0.7)
-      .moveTo(100, 200)
-      .lineTo(400, 100)
-      .lineTo(1000, 300)
-      .lineTo(900, 600)
-      .lineTo(800, 400)
-      .closePath()
-    bluePoly.cursor = 'pointer'
-    appRef.current?.stage.addChild(bluePoly)
+      const bluePoly = new Graphics()
+        .beginFill('blue', 0.7)
+        .moveTo(100, 200)
+        .lineTo(400, 100)
+        .lineTo(1000, 300)
+        .lineTo(900, 600)
+        .lineTo(800, 400)
+        .closePath()
+      bluePoly.cursor = 'pointer'
+      appRef.current?.stage.addChild(bluePoly)
+    })
   }, [])
 
   return (

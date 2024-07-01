@@ -1,18 +1,16 @@
-import { Container } from '@/display'
 import { IApplicationOptions } from '@/types'
-import { Renderer } from './Renderer'
-import { BatchPool } from '@/batch'
 import { initShader } from './utils/webgl/initShader'
 import { toRgbArray } from '@/utils/color'
+import { BatchRenderer } from './BatchRenderer'
 
-export class WebGLRenderer extends Renderer {
+export class WebGLRenderer extends BatchRenderer {
   public gl: WebGLRenderingContext
-  public batchPool: BatchPool
   private program: WebGLProgram
   private unifLoc: {
     u_root_transform: WebGLUniformLocation
     u_projection_matrix: WebGLUniformLocation
   }
+
   constructor(options: IApplicationOptions) {
     console.log(
       '正在使用 %c webGL ',
@@ -25,15 +23,17 @@ export class WebGLRenderer extends Renderer {
     const opts: WebGLContextAttributes = {
       antialias: true
     }
-    this.gl = this.canvasEle.getContext('webgl', opts) as WebGLRenderingContext
+    const gl = this.canvasEle.getContext('webgl', opts) as WebGLRenderingContext
+
+    this.gl = gl
 
     this.program = initShader(this)
 
-    const uRootTransformLoc = this.gl.getUniformLocation(
+    const uRootTransformLoc = gl.getUniformLocation(
       this.program,
       'u_root_transform'
     ) as WebGLUniformLocation
-    const uProjectionMatrixLoc = this.gl.getUniformLocation(
+    const uProjectionMatrixLoc = gl.getUniformLocation(
       this.program,
       'u_projection_matrix'
     ) as WebGLUniformLocation
@@ -44,20 +44,17 @@ export class WebGLRenderer extends Renderer {
 
     this.setProjectionMatrix()
 
-    this.batchPool = new BatchPool(this)
-
     const { backgroundColor, backgroundAlpha } = options
     const a = backgroundAlpha as number
     const [r, g, b] = toRgbArray(backgroundColor as string)
-    this.gl.clearColor(r * a, g * a, b * a, a)
+    gl.clearColor(r * a, g * a, b * a, a)
 
     this.setRootTransform(1, 0, 0, 1, 0, 0)
+
+    gl.getExtension('OES_element_index_uint')
   }
 
-  /**
-   * 设置投影矩阵
-   */
-  private setProjectionMatrix() {
+  protected setProjectionMatrix() {
     const width = this.canvasEle.width
     const height = this.canvasEle.height
 
@@ -75,7 +72,7 @@ export class WebGLRenderer extends Renderer {
     )
   }
 
-  private setRootTransform(
+  setRootTransform(
     a: number,
     b: number,
     c: number,
@@ -94,42 +91,28 @@ export class WebGLRenderer extends Renderer {
     )
   }
 
-  public render(rootContainer: Container): void {
-    /**
-     * update transform
-     */
-    rootContainer.sortChildren()
+  draw(): void {
+    const gl = this.gl
+    gl.clear(gl.COLOR_BUFFER_BIT)
+    gl.drawElements(gl.TRIANGLES, this.indexCount, gl.UNSIGNED_INT, 0)
+  }
 
-    const dirty = rootContainer.transform.shouldUpdateLocalTransform
-
-    rootContainer.transform.updateLocalTransform()
-
-    if (dirty) {
-      const { a, b, c, d, tx, ty } = rootContainer.transform.localTransform
-      this.setRootTransform(a, b, c, d, tx, ty)
-    }
-
-    rootContainer.worldAlpha = rootContainer.alpha
-
-    const children = rootContainer.children
-    for (let i = 0; i < children.length; i++) {
-      children[i].updateTransform()
-    }
-
-    /**
-     * 清空画布并绘制
-     */
-
+  updateBuffer(): void {
     const gl = this.gl
 
-    gl.clear(gl.COLOR_BUFFER_BIT)
+    if (this.vertexCount > this.curVertBufferLength) {
+      gl.bufferData(gl.ARRAY_BUFFER, this.vertFloatView, gl.STATIC_DRAW)
 
-    BatchPool.testDrawCallCount = 0
+      this.curVertBufferLength = this.vertexCount
+    } else {
+      gl.bufferSubData(gl.ARRAY_BUFFER, 0, this.vertFloatView)
+    }
 
-    rootContainer.renderWebGLRecursive(this)
-
-    this.batchPool.flush()
-
-    // console.log('total draw call count：', BatchPool.testDrawCallCount)
+    if (this.indexCount > this.curIndexBufferLength) {
+      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer, gl.STATIC_DRAW)
+      this.curIndexBufferLength = this.indexCount
+    } else {
+      gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER, 0, this.indexBuffer)
+    }
   }
 }

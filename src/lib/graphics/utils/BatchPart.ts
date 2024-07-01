@@ -14,10 +14,6 @@ export class BatchPart {
     this.indexStart = indexStart
   }
   public end(vertexCount: number, indexCount: number) {
-    if (vertexCount > 65536) {
-      throw new Error('每个图形的顶点数量不能超过65536！！！')
-    }
-
     this.vertexCount = vertexCount
     this.indexCount = indexCount
   }

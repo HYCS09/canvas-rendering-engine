@@ -1,15 +1,37 @@
+import { Batch } from '@/batch'
 import { DisplayObject } from './DisplayObject'
 import { Point, Transform } from '@/math'
+import { BatchRenderer } from '@/renderer/BatchRenderer'
 import { CanvasRenderer } from '@/renderer/CanvasRenderer'
 import { WebGLRenderer } from '@/renderer/WebGLRenderer'
 
 export class Container extends DisplayObject {
+  public type = 'container'
+
+  /**
+   * 是否需要对children排序
+   */
   public sortDirty = false
+
+  /**
+   * 所有子元素
+   */
   public readonly children: Container[] = []
 
-  constructor() {
-    super()
-  }
+  /**
+   * 用来标记worldTransform是否发生了改变
+   */
+  protected worldId = 0
+
+  /**
+   * 所有batch
+   */
+  protected batches: Batch[] = []
+
+  /**
+   * batch总数
+   */
+  protected batchCount = 0
 
   /**
    * 使用canvas2D，渲染自身，在container上面没有东西要渲染，所以这个函数的内容为空
@@ -76,18 +98,40 @@ export class Container extends DisplayObject {
     }
   }
 
+  /**
+   * 添加节点后需要更新节点的onStage属性
+   */
+  public updateOnStage(val: boolean) {
+    this.onStage = val
+
+    for (let i = 0; i < this.children.length; i++) {
+      this.children[i].updateOnStage(val)
+    }
+  }
+
   public addChild(child: Container) {
     child.parent?.removeChild(child) // 将要添加的child从它的父元素的children中移除
 
     this.children.push(child)
     child.parent = this // 将要添加的child的parent指向this
     this.sortDirty = true
+
+    if (this.onStage) {
+      child.updateOnStage(true)
+      this.emit('need-rebuild-arr')
+    }
   }
   public removeChild(child: Container) {
     for (let i = 0; i < this.children.length; i++) {
       if (this.children[i] === child) {
         this.children.splice(i, 1)
         child.parent = null
+
+        if (this.onStage) {
+          child.updateOnStage(false)
+          this.emit('need-rebuild-arr')
+        }
+
         return
       }
     }
@@ -106,5 +150,19 @@ export class Container extends DisplayObject {
     }
 
     return this.hitArea.contains(p)
+  }
+
+  /**
+   * 构建自身的batch
+   */
+  public buildBatches(batchRenderer: BatchRenderer) {
+    // nothing
+  }
+
+  /**
+   * 更新自身的所有batch对应的大数组中的顶点
+   */
+  public updateBatches(floatView: Float32Array) {
+    // nothing
   }
 }

@@ -1,29 +1,46 @@
 import { Renderer } from './renderer/Renderer'
 import { IApplicationOptions } from '@/types'
-import { CanvasRenderer } from './renderer/CanvasRenderer'
-import { WebGLRenderer } from './renderer/WebGLRenderer'
-import { WebGPURenderer } from './renderer/WebGPURenderer'
 import { normalizeColor } from './graphics/style/utils'
 
-export const getRenderer = (options: IApplicationOptions): Renderer => {
-  const { prefer = 'webGL' } = options
-  switch (prefer) {
-    case 'canvas2D':
-      return new CanvasRenderer(options)
-    case 'webGL':
-      return new WebGLRenderer(options)
-    case 'webGPU':
+const supportWebGPU = () => {
+  return !!navigator.gpu
+}
+
+export const getRenderer = async (
+  options: IApplicationOptions
+): Promise<Renderer> => {
+  const { prefer = 'webGPU' } = options
+
+  let realPrefer = prefer
+
+  if (realPrefer === 'webGPU') {
+    // webGPU的兼容性目前不是很好，所以针对它写一个判断逻辑
+    if (supportWebGPU()) {
+      const { WebGPURenderer } = await import('./renderer/WebGPURenderer')
       return new WebGPURenderer(options)
-    default:
-      throw new Error(`不存在${prefer} renderer`)
+    }
+
+    realPrefer = 'webGL'
   }
+
+  if (realPrefer === 'webGL') {
+    const { WebGLRenderer } = await import('./renderer/WebGLRenderer')
+    return new WebGLRenderer(options)
+  }
+
+  if (realPrefer === 'canvas2D') {
+    const { CanvasRenderer } = await import('./renderer/CanvasRenderer')
+    return new CanvasRenderer(options)
+  }
+
+  throw new Error(`不存在${realPrefer} renderer`)
 }
 
 export const normalizeOptions = (options: IApplicationOptions) => {
   const { backgroundColor, backgroundAlpha } = options
 
   if (backgroundColor === undefined) {
-    options.backgroundColor = '#ffffff'
+    options.backgroundColor = '#000000'
   }
 
   if (backgroundAlpha === undefined) {

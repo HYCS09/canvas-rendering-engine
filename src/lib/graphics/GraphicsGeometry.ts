@@ -28,7 +28,7 @@ export class GraphicsGeometry {
   /**
    * 顶点下标数组，每个元素代表一个顶点下标
    */
-  public vertexIndices = new CustomIntArray()
+  public indices = new CustomIntArray()
 
   constructor() {}
 
@@ -86,6 +86,6 @@ export class GraphicsGeometry {
     this.shapeIndex = 0
     this.batchParts.length = 0
     this.vertices.clear()
-    this.vertexIndices.clear()
+    this.indices.clear()
   }
 }

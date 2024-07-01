@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "types": ["@webgpu/types"],
     // "strictPropertyInitialization": false,
     "target": "ESNext",
     "useDefineForClassFields": true,

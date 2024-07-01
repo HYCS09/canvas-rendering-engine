@@ -5,21 +5,27 @@ import { Container } from '@/display'
 import { EventSystem } from '@/events'
 
 export class Application {
-  private readonly renderer: Renderer
+  private renderer!: Renderer
   public readonly stage = new Container()
   public readonly view: HTMLCanvasElement
-  private eventSystem: EventSystem
+  private readonly eventSystem: EventSystem
+  private readonly options: IApplicationOptions
 
   constructor(options: IApplicationOptions) {
     normalizeOptions(options)
+    this.options = options
+
+    this.stage.onStage = true
 
     const { view } = options
     this.view = view
 
-    this.renderer = getRenderer(options)
-
     this.eventSystem = new EventSystem(this.view, this.stage)
+  }
 
+  public async init() {
+    this.renderer = await getRenderer(this.options)
+    await this.renderer.init()
     this.start()
   }
 
@@ -32,6 +38,7 @@ export class Application {
       this.render()
       requestAnimationFrame(func)
     }
-    func()
+
+    requestAnimationFrame(func)
   }
 }

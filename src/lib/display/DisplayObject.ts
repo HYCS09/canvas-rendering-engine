@@ -8,16 +8,27 @@ import {
 import { default as Eventemitter } from 'eventemitter3'
 import { Container } from './Container'
 import { Cursor, FederatedEventMap } from '@/events'
+import { Renderer } from '@/renderer/Renderer'
+
+const listener = () => {
+  Renderer.needBuildArr = true
+}
 
 export abstract class DisplayObject extends Eventemitter {
   public alpha = 1
   public worldAlpha = 1
-  public visible = true
+  private _visible = true
   public transform = new Transform()
   protected _zIndex = 0
   public parent: Container | null = null
   public hitArea: Shape | null = null
   public cursor: Cursor = 'auto'
+  public onStage = false
+
+  constructor() {
+    super()
+    this.on('need-rebuild-arr', listener)
+  }
 
   public updateTransform() {
     const parentTransform = this.parent?.transform || new Transform()
@@ -25,14 +36,39 @@ export abstract class DisplayObject extends Eventemitter {
     this.worldAlpha = this.alpha * (this.parent?.worldAlpha || 1)
   }
 
+  get visible() {
+    return this._visible
+  }
+
+  set visible(val: boolean) {
+    if (val === this._visible) {
+      return
+    }
+
+    this._visible = val
+
+    if (this.onStage) {
+      this.emit('need-rebuild-arr')
+    }
+  }
+
   get zIndex(): number {
     return this._zIndex
   }
 
   set zIndex(value: number) {
+    if (value === this.zIndex) {
+      return
+    }
+
     this._zIndex = value
+
     if (this.parent) {
       this.parent.sortDirty = true
+    }
+
+    if (this.onStage) {
+      this.emit('need-rebuild-arr')
     }
   }
 

@@ -29,11 +29,11 @@ export const triangulateFill = (
   const batchPart = new BatchPart(fillStyle)
   geometry.batchParts.push(batchPart)
 
-  batchPart.start(geometry.vertices.length / 2, geometry.vertexIndices.length)
+  batchPart.start(geometry.vertices.length / 2, geometry.indices.length)
 
   if (shape instanceof Rectangle) {
     geometry.vertices.concat(vertices)
-    geometry.vertexIndices.concat([0, 1, 2, 0, 2, 3])
+    geometry.indices.concat([0, 1, 2, 0, 2, 3])
 
     // 矩形的顶点是固定的4个，顶点下标则是固定的6个
     batchPart.end(4, 6)
@@ -49,7 +49,7 @@ export const triangulateFill = (
     geometry.vertices.concat(vertices)
 
     const indices = triangulateCircleFill(vertices)
-    geometry.vertexIndices.concat(indices)
+    geometry.indices.concat(indices)
 
     batchPart.end(vertices.length / 2 + 1, indices.length)
   }
@@ -64,7 +64,7 @@ export const triangulateFill = (
     geometry.vertices.concat(vertices)
 
     const indices = triangulateCircleFill(vertices)
-    geometry.vertexIndices.concat(indices)
+    geometry.indices.concat(indices)
 
     batchPart.end(vertices.length / 2 + 1, indices.length)
   }
@@ -79,7 +79,7 @@ export const triangulateFill = (
     geometry.vertices.concat(vertices)
 
     const indices = triangulateCircleFill(vertices)
-    geometry.vertexIndices.concat(indices)
+    geometry.indices.concat(indices)
 
     batchPart.end(vertices.length / 2 + 1, indices.length)
   }
@@ -88,7 +88,7 @@ export const triangulateFill = (
     geometry.vertices.concat(vertices)
 
     const indices = earcut(vertices)
-    geometry.vertexIndices.concat(indices)
+    geometry.indices.concat(indices)
 
     batchPart.end(vertices.length / 2, indices.length)
   }

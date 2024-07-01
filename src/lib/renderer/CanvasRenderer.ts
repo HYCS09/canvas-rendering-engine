@@ -19,8 +19,8 @@ export class CanvasRenderer extends Renderer {
     this.backgroundAlpha = backgroundAlpha as number
     this.ctx = this.canvasEle.getContext('2d') as CanvasRenderingContext2D
   }
-  public render(container: Container) {
-    container.updateTransform()
+  public render(rootContainer: Container) {
+    rootContainer.updateTransform()
     const ctx = this.ctx
 
     ctx.save()
@@ -32,7 +32,7 @@ export class CanvasRenderer extends Renderer {
     ctx.fillStyle = this.backgroundColor
     ctx.fillRect(0, 0, this.screen.width, this.screen.height)
 
-    container.renderCanvasRecursive(this)
+    rootContainer.renderCanvasRecursive(this)
 
     ctx.restore()
   }

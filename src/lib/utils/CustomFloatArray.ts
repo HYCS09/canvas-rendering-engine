@@ -1,32 +1,32 @@
 const defaultMaxLen = 2 ** 4 // 16
 
 export class CustomFloatArray {
-  private cursor = 0
+  private _oldLength = -1
+  private _length = 0
   private curMaxLen = defaultMaxLen
   private float32 = new Float32Array(defaultMaxLen)
-
-  constructor() {}
+  private _data!: Float32Array
 
   /**
    * 获取长度
    */
   get length() {
-    return this.cursor
+    return this._length
   }
 
   /**
    * 拼接一个number数组
    */
   public concat(arr: number[]) {
-    const newLen = this.length + arr.length
+    const newLen = this._length + arr.length
 
     while (newLen > this.curMaxLen) {
       this.expandCapacity()
     }
 
     for (let i = 0; i < arr.length; i++) {
-      this.float32[this.cursor] = arr[i]
-      this.cursor++
+      this.float32[this._length] = arr[i]
+      this._length++
     }
   }
 
@@ -35,12 +35,12 @@ export class CustomFloatArray {
    * @param num 要插入的数
    */
   public push(num: number) {
-    if (this.cursor >= this.curMaxLen) {
+    if (this._length >= this.curMaxLen) {
       this.expandCapacity()
     }
 
-    this.float32[this.cursor] = num
-    this.cursor++
+    this.float32[this._length] = num
+    this._length++
   }
 
   /**
@@ -58,7 +58,11 @@ export class CustomFloatArray {
    * 以从0到this.length的这段buffer为底层，建立Float32Array视图并返回
    */
   get data() {
-    return new Float32Array(this.float32.buffer, 0, this.length)
+    if (this._oldLength !== this._length) {
+      this._data = new Float32Array(this.float32.buffer, 0, this._length)
+      this._oldLength = this._length
+    }
+    return this._data
   }
 
   /**
@@ -66,6 +70,6 @@ export class CustomFloatArray {
    */
   public clear() {
     // 并不会真的清空
-    this.cursor = 0
+    this._length = 0
   }
 }

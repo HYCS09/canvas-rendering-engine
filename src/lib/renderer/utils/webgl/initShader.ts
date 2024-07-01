@@ -63,22 +63,22 @@ const setVertexAttribPointer = (
   const aPositionLoc = gl.getAttribLocation(program, `a_position`)
   gl.vertexAttribPointer(
     aPositionLoc, // attribute变量的location
-    2, // 读2个单元
+    2, // 读2个单元(8个字节)
     gl.FLOAT, //类型
     false, //不需要正交化
-    BYTES_PER_VERTEX, //跨度(12个byte)
-    0 // 从每组的第几个字节开始读
+    BYTES_PER_VERTEX, //跨度(12个字节)
+    0 // 从每组的下标为0的字节开始读
   )
   gl.enableVertexAttribArray(aPositionLoc)
 
   const aColorLoc = gl.getAttribLocation(program, `a_color`)
   gl.vertexAttribPointer(
     aColorLoc, // attribute变量的location
-    4, // 读4个单元
+    4, // 读4个单元(4个字节)
     gl.UNSIGNED_BYTE, //类型
     true, //需要正交化
-    BYTES_PER_VERTEX, //跨度(12个byte)
-    8 // 从每组的第几个字节开始读
+    BYTES_PER_VERTEX, //跨度(12个字节)
+    2 * Float32Array.BYTES_PER_ELEMENT // 从每组的下标为8的字节开始读
   )
   gl.enableVertexAttribArray(aColorLoc)
 }

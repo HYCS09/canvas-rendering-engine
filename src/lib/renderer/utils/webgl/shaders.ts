@@ -1,4 +1,7 @@
-export const vertexShaderSource = `
+/**
+ * 顶点着色器
+ */
+export const vertexShaderSource = /*glsl*/ `
 precision highp float;
 attribute vec2 a_position;
 attribute vec4 a_color;
@@ -11,7 +14,10 @@ void main(){
 }
 `.trim()
 
-export const fragmentShaderSource = `
+/**
+ * 片元着色器
+ */
+export const fragmentShaderSource = /*glsl*/ `
 precision mediump float;
 varying vec4 v_color;
 void main(){

@@ -234,10 +234,10 @@ export const triangulateStroke = (
   const batchPart = new BatchPart(lineStyle)
   geometry.batchParts.push(batchPart)
 
-  batchPart.start(geometry.vertices.length / 2, geometry.vertexIndices.length)
+  batchPart.start(geometry.vertices.length / 2, geometry.indices.length)
 
   const lineVertices: number[] = []
-  const lineVertexIndices: number[] = []
+  const lineIndices: number[] = []
 
   // 第一个点
   const fx = vertices[0]
@@ -267,7 +267,7 @@ export const triangulateStroke = (
         fy - nvy
       )
 
-      lineVertexIndices.push(0, 1, 2, 0, 2, 3)
+      lineIndices.push(0, 1, 2, 0, 2, 3)
     }
 
     if (lineCap === LINE_CAP.ROUND) {
@@ -279,7 +279,7 @@ export const triangulateStroke = (
         fx + nvx,
         fy + nvy,
         lineVertices,
-        lineVertexIndices
+        lineIndices
       )
     }
 
@@ -325,7 +325,7 @@ export const triangulateStroke = (
        * 处理线段本身
        */
       lineVertices.push(x1 + nvx1, y1 + nvy1, x1 - nvx1, y1 - nvy1)
-      lineVertexIndices.push(
+      lineIndices.push(
         0 + cursor,
         1 + cursor,
         2 + cursor,
@@ -352,7 +352,7 @@ export const triangulateStroke = (
             x1 - nvx1,
             y1 - nvy1,
             lineVertices,
-            lineVertexIndices
+            lineIndices
           )
 
           cursor = lineVertices.length / 2
@@ -419,7 +419,7 @@ export const triangulateStroke = (
         if (cross > 0) {
           // 四边形
           lineVertices.push(ompx, ompy, x1 - nvx1, y1 - nvy1)
-          lineVertexIndices.push(
+          lineIndices.push(
             0 + cursor,
             1 + cursor,
             2 + cursor,
@@ -440,7 +440,7 @@ export const triangulateStroke = (
             y1 - nvy2
           )
 
-          lineVertexIndices.push(0 + cursor, 1 + cursor, 2 + cursor)
+          lineIndices.push(0 + cursor, 1 + cursor, 2 + cursor)
 
           cursor = lineVertices.length / 2
 
@@ -449,7 +449,7 @@ export const triangulateStroke = (
         } else {
           // 四边形
           lineVertices.push(x1 + nvx1, y1 + nvy1, impx, impy)
-          lineVertexIndices.push(
+          lineIndices.push(
             0 + cursor,
             1 + cursor,
             2 + cursor,
@@ -470,7 +470,7 @@ export const triangulateStroke = (
             y1 + nvy2
           )
 
-          lineVertexIndices.push(0 + cursor, 1 + cursor, 2 + cursor)
+          lineIndices.push(0 + cursor, 1 + cursor, 2 + cursor)
 
           cursor = lineVertices.length / 2
 
@@ -481,7 +481,7 @@ export const triangulateStroke = (
 
       if (realLineJoin === LINE_JOIN.MITER) {
         lineVertices.push(ompx, ompy, impx, impy)
-        lineVertexIndices.push(
+        lineIndices.push(
           0 + cursor,
           1 + cursor,
           2 + cursor,
@@ -498,7 +498,7 @@ export const triangulateStroke = (
         if (cross < 0) {
           // 四边形
           lineVertices.push(x1 + nvx1, y1 + nvy1, impx, impy)
-          lineVertexIndices.push(
+          lineIndices.push(
             0 + cursor,
             1 + cursor,
             2 + cursor,
@@ -511,13 +511,13 @@ export const triangulateStroke = (
 
           // 三角形1
           lineVertices.push(impx, impy, x1 + nvx1, y1 + nvy1, x1, y1)
-          lineVertexIndices.push(0 + cursor, 1 + cursor, 2 + cursor)
+          lineIndices.push(0 + cursor, 1 + cursor, 2 + cursor)
 
           cursor = lineVertices.length / 2
 
           // 三角形2
           lineVertices.push(impx, impy, x1 + nvx2, y1 + nvy2, x1, y1)
-          lineVertexIndices.push(0 + cursor, 1 + cursor, 2 + cursor)
+          lineIndices.push(0 + cursor, 1 + cursor, 2 + cursor)
 
           cursor = lineVertices.length / 2
 
@@ -530,7 +530,7 @@ export const triangulateStroke = (
             x1 + nvx2,
             y1 + nvy2,
             lineVertices,
-            lineVertexIndices
+            lineIndices
           )
 
           cursor = lineVertices.length / 2
@@ -540,7 +540,7 @@ export const triangulateStroke = (
         } else {
           // 四边形
           lineVertices.push(ompx, ompy, x1 - nvx1, y1 - nvy1)
-          lineVertexIndices.push(
+          lineIndices.push(
             0 + cursor,
             1 + cursor,
             2 + cursor,
@@ -553,13 +553,13 @@ export const triangulateStroke = (
 
           // 三角形1
           lineVertices.push(ompx, ompy, x1 - nvx1, y1 - nvy1, x1, y1)
-          lineVertexIndices.push(0 + cursor, 1 + cursor, 2 + cursor)
+          lineIndices.push(0 + cursor, 1 + cursor, 2 + cursor)
 
           cursor = lineVertices.length / 2
 
           // 三角形2
           lineVertices.push(ompx, ompy, x1 - nvx2, y1 - nvy2, x1, y1)
-          lineVertexIndices.push(0 + cursor, 1 + cursor, 2 + cursor)
+          lineIndices.push(0 + cursor, 1 + cursor, 2 + cursor)
 
           cursor = lineVertices.length / 2
 
@@ -572,7 +572,7 @@ export const triangulateStroke = (
             x1 - nvx1,
             y1 - nvy1,
             lineVertices,
-            lineVertexIndices
+            lineIndices
           )
 
           cursor = lineVertices.length / 2
@@ -584,7 +584,7 @@ export const triangulateStroke = (
     } else {
       // 线段1的整体
       lineVertices.push(x1 + nvx1, y1 + nvy1, x1 - nvx1, y1 - nvy1)
-      lineVertexIndices.push(
+      lineIndices.push(
         0 + cursor,
         1 + cursor,
         2 + cursor,
@@ -599,11 +599,11 @@ export const triangulateStroke = (
         if (cross > 0) {
           // 三角形
           lineVertices.push(x1, y1, x1 - nvx1, y1 - nvy1, x1 - nvx2, y1 - nvy2)
-          lineVertexIndices.push(0 + cursor, 1 + cursor, 2 + cursor)
+          lineIndices.push(0 + cursor, 1 + cursor, 2 + cursor)
         } else {
           // 三角形
           lineVertices.push(x1, y1, x1 + nvx1, y1 + nvy1, x1 + nvx2, y1 + nvy2)
-          lineVertexIndices.push(0 + cursor, 1 + cursor, 2 + cursor)
+          lineIndices.push(0 + cursor, 1 + cursor, 2 + cursor)
         }
       }
 
@@ -620,7 +620,7 @@ export const triangulateStroke = (
             x1 - nvx2,
             y1 - nvy2
           )
-          lineVertexIndices.push(
+          lineIndices.push(
             0 + cursor,
             1 + cursor,
             2 + cursor,
@@ -640,7 +640,7 @@ export const triangulateStroke = (
             x1 + nvx2,
             y1 + nvy2
           )
-          lineVertexIndices.push(
+          lineIndices.push(
             0 + cursor,
             1 + cursor,
             2 + cursor,
@@ -662,7 +662,7 @@ export const triangulateStroke = (
             x1 - nvx1,
             y1 - nvy1,
             lineVertices,
-            lineVertexIndices
+            lineIndices
           )
         } else {
           // 一个扇形
@@ -674,7 +674,7 @@ export const triangulateStroke = (
             x1 + nvx2,
             y1 + nvy2,
             lineVertices,
-            lineVertexIndices
+            lineIndices
           )
         }
       }
@@ -703,7 +703,7 @@ export const triangulateStroke = (
     lastY - lastNvy
   )
 
-  lineVertexIndices.push(
+  lineIndices.push(
     0 + cursor,
     1 + cursor,
     2 + cursor,
@@ -741,7 +741,7 @@ export const triangulateStroke = (
         ly - nvy
       )
 
-      lineVertexIndices.push(
+      lineIndices.push(
         0 + cursor,
         1 + cursor,
         2 + cursor,
@@ -760,13 +760,13 @@ export const triangulateStroke = (
         lx - nvx,
         ly - nvy,
         lineVertices,
-        lineVertexIndices
+        lineIndices
       )
     }
   }
 
   geometry.vertices.concat(lineVertices)
-  geometry.vertexIndices.concat(lineVertexIndices)
+  geometry.indices.concat(lineIndices)
 
-  batchPart.end(lineVertices.length / 2, lineVertexIndices.length)
+  batchPart.end(lineVertices.length / 2, lineIndices.length)
 }
