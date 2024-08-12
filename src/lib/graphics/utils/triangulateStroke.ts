@@ -3,6 +3,7 @@ import { GraphicsGeometry } from '../GraphicsGeometry'
 import { Polygon } from '@/math'
 import { BatchPart } from './BatchPart'
 import { LINE_CAP, LINE_JOIN } from '@/enums'
+import { Texture } from '@/texture'
 
 /**
  * 求两条线段所在的直线的交点，原理：https://www.cnblogs.com/xpvincent/p/5208994.html
@@ -766,6 +767,22 @@ export const triangulateStroke = (
   }
 
   geometry.vertices.concat(lineVertices)
+  const { baseTexture, crop } = lineStyle.texture
+  if (lineStyle.texture === Texture.EMPTY) {
+    geometry.uvs.concat(new Array(lineVertices.length).fill(0))
+  } else {
+    geometry.uvs.concat(
+      lineVertices.map((i, idx) => {
+        if (idx % 2 === 0) {
+          // x
+          return (i + crop.x) / baseTexture.width
+        } else {
+          // y
+          return (i + crop.y) / baseTexture.height
+        }
+      })
+    )
+  }
   geometry.indices.concat(lineIndices)
 
   batchPart.end(lineVertices.length / 2, lineIndices.length)

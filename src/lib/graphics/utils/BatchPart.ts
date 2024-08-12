@@ -6,6 +6,7 @@ export class BatchPart {
   public indexStart = 0
   public vertexCount = 0
   public indexCount = 0
+
   constructor(style: FillStyle) {
     this.style = style
   }

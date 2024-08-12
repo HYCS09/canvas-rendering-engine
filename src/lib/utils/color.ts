@@ -10,7 +10,7 @@ const getRgb = (color: string): [number, number, number] => {
 }
 
 export const toRgbaLittleEndian = (color: string, alpha: number) => {
-  const [r, g, b] = getRgb(color).map((i) => Math.round(i * alpha))
+  const [r, g, b] = getRgb(color)
 
   const a = Math.round(alpha * 255)
 

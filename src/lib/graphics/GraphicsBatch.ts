@@ -16,30 +16,37 @@ export class GraphicsBatch extends Batch {
   /**
    * 对应的Graphics实例
    */
-  graphics!: Graphics
+  public graphics!: Graphics
+
+  /**
+   * Graphics类子图形的alpha，每次draw或者stroke都可以指定alpha
+   */
+  public batchAlpha = 1
 
   packVertices(floatView: Float32Array, intView: Uint32Array): void {
     const step = BYTES_PER_VERTEX / 4
 
     const vertices = this.graphics.geometry.vertices.data
+    const uvs = this.graphics.geometry.uvs.data
 
     const offset = this.vertexOffset
+
+    const { a, b, c, d, tx, ty } = this.graphics.worldTransform
 
     for (let i = 0; i < this.vertexCount; i++) {
       const x = vertices[(offset + i) * 2] // position.x
       const y = vertices[(offset + i) * 2 + 1] // position.y
-
-      const { a, b, c, d, tx, ty } = this.graphics.worldTransform
-
-      const realX = a * x + c * y + tx
-      const realY = b * x + d * y + ty
+      const u = uvs[(offset + i) * 2]
+      const v = uvs[(offset + i) * 2 + 1]
 
       const vertPos = (this.vertexStart + i) * step
 
-      floatView[vertPos] = realX
-      floatView[vertPos + 1] = realY
-
-      intView[vertPos + 2] = this.rgba // color
+      floatView[vertPos] = a * x + c * y + tx
+      floatView[vertPos + 1] = b * x + d * y + ty
+      floatView[vertPos + 2] = u
+      floatView[vertPos + 3] = v
+      intView[vertPos + 4] = this.rgba // color
+      intView[vertPos + 5] = this.texture.baseTexture.gpuLocation
     }
   }
 
@@ -70,6 +77,23 @@ export class GraphicsBatch extends Batch {
 
       floatView[vertPos] = a * x + c * y + tx
       floatView[vertPos + 1] = b * x + d * y + ty
+    }
+  }
+
+  public updateAlpha(intView: Uint32Array): void {
+    const step = BYTES_PER_VERTEX / 4
+
+    const alpha = Math.round(this.batchAlpha * this.graphics.worldAlpha * 255)
+
+    for (let i = 0; i < this.vertexCount; i++) {
+      const vertPos = (this.vertexStart + i) * step
+
+      const rgba = intView[vertPos + 4]
+
+      const rgb = rgba & 0xffffff
+      const a = alpha << 24
+
+      intView[vertPos + 4] = rgb + a
     }
   }
 }

@@ -1,7 +1,10 @@
+import { Texture } from '@/texture'
+
 export class FillStyle {
   public color = '#ffffff'
   public alpha = 1
   public visible = false
+  public texture = Texture.EMPTY
 
   constructor() {
     this.reset()
@@ -13,6 +16,7 @@ export class FillStyle {
     obj.color = this.color
     obj.alpha = this.alpha
     obj.visible = this.visible
+    obj.texture = this.texture
 
     return obj
   }
@@ -21,5 +25,6 @@ export class FillStyle {
     this.color = '#ffffff'
     this.alpha = 1
     this.visible = false
+    this.texture = Texture.EMPTY
   }
 }

@@ -8,7 +8,7 @@ export const buildArray = (
   batchRenderer: BatchRenderer,
   container: Container
 ) => {
-  if (container.worldAlpha <= 0 || !container.visible) {
+  if (!container.visible) {
     return
   }
 

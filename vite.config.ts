@@ -5,7 +5,8 @@ import { join } from 'path'
 // https://vitejs.dev/config/
 export default defineConfig({
   server: {
-    open: true
+    open: true,
+    hmr: false
   },
   plugins: [react()],
   resolve: {

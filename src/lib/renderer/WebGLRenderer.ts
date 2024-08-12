@@ -2,14 +2,17 @@ import { IApplicationOptions } from '@/types'
 import { initShader } from './utils/webgl/initShader'
 import { toRgbArray } from '@/utils/color'
 import { BatchRenderer } from './BatchRenderer'
+import { GlTextureSystem } from '@/texture/GlTextureSystem'
 
 export class WebGLRenderer extends BatchRenderer {
   public gl: WebGLRenderingContext
+
   private program: WebGLProgram
   private unifLoc: {
     u_root_transform: WebGLUniformLocation
     u_projection_matrix: WebGLUniformLocation
   }
+  private textureSystem: GlTextureSystem
 
   constructor(options: IApplicationOptions) {
     console.log(
@@ -24,6 +27,7 @@ export class WebGLRenderer extends BatchRenderer {
       antialias: true
     }
     const gl = this.canvasEle.getContext('webgl', opts) as WebGLRenderingContext
+    this.textureSystem = new GlTextureSystem(gl)
 
     this.gl = gl
 
@@ -52,6 +56,9 @@ export class WebGLRenderer extends BatchRenderer {
     this.setRootTransform(1, 0, 0, 1, 0, 0)
 
     gl.getExtension('OES_element_index_uint')
+
+    gl.bufferData(gl.ARRAY_BUFFER, this.vertFloatView, gl.STATIC_DRAW)
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer, gl.STATIC_DRAW)
   }
 
   protected setProjectionMatrix() {
@@ -94,7 +101,21 @@ export class WebGLRenderer extends BatchRenderer {
   draw(): void {
     const gl = this.gl
     gl.clear(gl.COLOR_BUFFER_BIT)
-    gl.drawElements(gl.TRIANGLES, this.indexCount, gl.UNSIGNED_INT, 0)
+
+    for (let i = 0; i < this.drawCallCount; i++) {
+      const { start, size, texCount, baseTextures } = this.drawCalls[i]
+
+      for (let j = 0; j < texCount; j++) {
+        this.textureSystem.bind(baseTextures[j], j)
+      }
+
+      gl.drawElements(
+        gl.TRIANGLES,
+        size,
+        gl.UNSIGNED_INT,
+        start * Uint32Array.BYTES_PER_ELEMENT
+      )
+    }
   }
 
   updateBuffer(): void {

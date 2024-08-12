@@ -1,9 +1,11 @@
-import { GraphicsBatchPool } from '@/graphics/utils/pool'
+import { GraphicsBatchPool } from '@/graphics/utils/graphicBatchPool'
 import { BatchPool } from './pool'
+import { SpriteBatchPool } from '@/sprite/SpriteBatchPool'
 
 class BatchPools {
   private batchesMap: Record<string, BatchPool> = {
-    graphics: new GraphicsBatchPool()
+    graphics: new GraphicsBatchPool(),
+    sprite: new SpriteBatchPool()
   }
   constructor() {}
   public get(type: string) {

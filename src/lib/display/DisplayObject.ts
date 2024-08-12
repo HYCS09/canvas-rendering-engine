@@ -5,7 +5,7 @@ import {
   Shape,
   Transform
 } from '@/math'
-import { default as Eventemitter } from 'eventemitter3'
+import Eventemitter from 'eventemitter3'
 import { Container } from './Container'
 import { Cursor, FederatedEventMap } from '@/events'
 import { Renderer } from '@/renderer/Renderer'
@@ -15,8 +15,9 @@ const listener = () => {
 }
 
 export abstract class DisplayObject extends Eventemitter {
-  public alpha = 1
-  public worldAlpha = 1
+  private _alpha = 1
+  public _worldAlpha = 1
+  protected alphaDirty = true
   private _visible = true
   public transform = new Transform()
   protected _zIndex = 0
@@ -30,10 +31,33 @@ export abstract class DisplayObject extends Eventemitter {
     this.on('need-rebuild-arr', listener)
   }
 
-  public updateTransform() {
-    const parentTransform = this.parent?.transform || new Transform()
-    this.transform.updateTransform(parentTransform)
-    this.worldAlpha = this.alpha * (this.parent?.worldAlpha || 1)
+  get worldAlpha() {
+    return this._worldAlpha
+  }
+
+  set worldAlpha(value: number) {
+    if (value === this._worldAlpha) {
+      return
+    }
+
+    this._worldAlpha = value
+    this.alphaDirty = true
+  }
+
+  get alpha() {
+    return this._alpha
+  }
+
+  set alpha(value: number) {
+    if (value === this._alpha) {
+      return
+    }
+
+    if (value > 1 || value < 0) {
+      throw new Error(`alpha必须为0-1之间的值`)
+    }
+
+    this._alpha = value
   }
 
   get visible() {
@@ -112,6 +136,9 @@ export abstract class DisplayObject extends Eventemitter {
     return this.transform.skew
   }
 
+  /**
+   * 旋转角度-弧度制
+   */
   get rotation(): number {
     return this.transform.rotation
   }
@@ -120,6 +147,9 @@ export abstract class DisplayObject extends Eventemitter {
     this.transform.rotation = value
   }
 
+  /**
+   * 旋转角度-角度制
+   */
   get angle(): number {
     return this.transform.rotation * RAD_TO_DEG
   }

@@ -5,7 +5,7 @@
 # 启动项目
 
 ```bash
- yarn start
+yarn start
 ```
 
 # 快速开始
@@ -53,6 +53,75 @@ app.init().then(() => {
 ```
 
 然后就能在屏幕上看到效果了！
+
+# 添加图片(sprite)
+
+```typescript
+appRef.current?.init().then(() => {
+  const img1 = new Image()
+  img1.src = dogImg
+  img1.onload = () => {
+    const texture = Texture.from(img1)
+    const sprite = new Sprite(texture)
+    sprite.width = 200
+    sprite.height = 200
+    appRef.current?.stage.addChild(sprite)
+  }
+
+  const img2 = new Image()
+  img2.src = seaImg
+  img2.onload = () => {
+    const sprite = Sprite.from(img2)
+    sprite.width = 300
+    sprite.height = 300
+    sprite.position.set(0, 300)
+    sprite.alpha = 0.7
+    appRef.current?.stage.addChild(sprite)
+  }
+
+  const img3 = new Image()
+  img3.src = fieldsImg
+  img3.onload = () => {
+    const baseTexture = BaseTexture.from(img3)
+    const texture1 = new Texture(baseTexture, new Rectangle(0, 0, 400, 600))
+    const sprite1 = new Sprite(texture1)
+    sprite1.width = 200
+    sprite1.height = 300
+    sprite1.position.set(500, 50)
+    appRef.current?.stage.addChild(sprite1)
+
+    const texture2 = new Texture(baseTexture, new Rectangle(400, 600, 400, 600))
+    const sprite2 = new Sprite(texture2)
+    sprite2.width = 200
+    sprite2.height = 300
+    sprite2.position.set(800, 50)
+    sprite2.alpha = 0.7
+    appRef.current?.stage.addChild(sprite2)
+  }
+})
+```
+
+# Graphics图片填充
+
+```typescript
+appRef.current?.init().then(() => {
+  const img4 = new Image()
+  img4.src = volcanoImg
+  img4.onload = () => {
+    const texture = Texture.from(img4)
+    const star = new Graphics()
+      .beginTextureFill({ texture, alpha: 0.7 })
+      .moveTo(400, 0)
+      .lineTo(800, 600)
+      .lineTo(400, 1200)
+      .lineTo(0, 600)
+      .closePath()
+    star.scale.set(0.25)
+    star.position.set(400, 400)
+    appRef.current?.stage.addChild(star)
+  }
+})
+```
 
 # 指定渲染方式
 

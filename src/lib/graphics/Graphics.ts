@@ -19,6 +19,23 @@ import { toRgbaLittleEndian } from '@/utils/color'
 import { batchPool } from '@/batch'
 import { GraphicsBatch } from './GraphicsBatch'
 import { BatchRenderer } from '@/renderer/BatchRenderer'
+import { Texture } from '@/texture'
+import { getCanvasPattern } from './utils/pattern'
+
+const normalizeOption = (options: { texture: Texture; alpha?: number }) => {
+  const texture = options.texture
+  const alpha = options.alpha ?? 1
+
+  if (!texture || !(texture instanceof Texture)) {
+    throw new Error(`请传递Texture`)
+  }
+
+  if (typeof alpha !== 'number' || alpha < 0 || alpha > 1) {
+    throw new Error(`alpha必须是一个0-1之间的数值`)
+  }
+
+  return { texture, alpha }
+}
 
 export class Graphics extends Container {
   private _lineStyle = new LineStyle()
@@ -102,6 +119,29 @@ export class Graphics extends Container {
   }
 
   /**
+   * 开始texture填充模式，接下来绘制的所有路径都将被填充(使用texture)，直到调用了endFill
+   * @param color 填充颜色
+   * @param alpha 不透明度
+   */
+  public beginTextureFill(options: { texture: Texture; alpha?: number }) {
+    // 在填充参数变化之前，先将已有的path画出来
+    this.startPoly()
+
+    const { texture, alpha } = normalizeOption(options)
+
+    this._fillStyle.reset()
+
+    this._fillStyle.alpha = alpha
+    this._fillStyle.texture = texture
+
+    if (alpha > 0) {
+      this._fillStyle.visible = true
+    }
+
+    return this
+  }
+
+  /**
    * 开始填充模式，接下来绘制的所有路径都将被填充，直到调用了endFill
    * @param color 填充颜色
    * @param alpha 不透明度
@@ -110,10 +150,16 @@ export class Graphics extends Container {
     // 在填充参数变化之前，先将已有的path画出来
     this.startPoly()
 
+    if (typeof alpha !== 'number' || alpha < 0 || alpha > 1) {
+      throw new Error(`alpha必须是一个0-1之间的数值`)
+    }
+
+    this._fillStyle.reset()
+
     this._fillStyle.color = normalizeColor(color)
     this._fillStyle.alpha = alpha
 
-    if (this._fillStyle.alpha > 0) {
+    if (alpha > 0) {
       this._fillStyle.visible = true
     }
 
@@ -505,7 +551,13 @@ export class Graphics extends Container {
       const { lineStyle, fillStyle, shape } = data
 
       if (fillStyle.visible) {
-        ctx.fillStyle = fillStyle.color
+        if (fillStyle.texture === Texture.EMPTY) {
+          ctx.fillStyle = fillStyle.color
+        } else {
+          ctx.fillStyle =
+            fillStyle.texture.canvasPattern ??
+            getCanvasPattern(fillStyle.texture)
+        }
       }
 
       if (lineStyle.visible) {
@@ -633,6 +685,7 @@ export class Graphics extends Container {
     this.startPoly()
 
     this.worldId = this.transform.worldId
+    this.alphaDirty = false
 
     this.geometry.buildVerticesAndTriangulate()
 
@@ -642,14 +695,15 @@ export class Graphics extends Container {
       const { style, vertexStart, vertexCount, indexStart, indexCount } =
         batchParts[i]
 
-      const { color, alpha } = style
-
-      const rgba = toRgbaLittleEndian(color, alpha * this.worldAlpha)
+      const { color, alpha: batchAlpha, texture } = style
 
       const batch = batchPool.get(this.type) as GraphicsBatch
       batch.vertexCount = vertexCount
       batch.indexCount = indexCount
-      batch.rgba = rgba
+      batch.rgba = toRgbaLittleEndian(color, batchAlpha * this.worldAlpha)
+      batch.texture = texture
+
+      batch.batchAlpha = batchAlpha
       batch.vertexOffset = vertexStart
       batch.indexOffset = indexStart
       batch.graphics = this
@@ -659,18 +713,6 @@ export class Graphics extends Container {
     }
 
     this.batchCount = batchParts.length
-  }
-
-  public updateBatches(floatView: Float32Array): void {
-    if (this.worldId === this.transform.worldId) {
-      return
-    }
-
-    this.worldId = this.transform.worldId
-
-    for (let i = 0; i < this.batchCount; i++) {
-      this.batches[i].updateVertices(floatView)
-    }
   }
 
   public containsPoint(p: Point) {

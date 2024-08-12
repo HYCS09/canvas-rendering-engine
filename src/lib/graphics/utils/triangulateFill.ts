@@ -3,6 +3,7 @@ import { GraphicsGeometry } from '../GraphicsGeometry'
 import { GraphicsData } from '../GraphicsData'
 import { BatchPart } from './BatchPart'
 import earcut from 'earcut'
+import { Texture } from '@/texture'
 
 const triangulateCircleFill = (vertices: number[]) => {
   const indices: number[] = []
@@ -91,5 +92,21 @@ export const triangulateFill = (
     geometry.indices.concat(indices)
 
     batchPart.end(vertices.length / 2, indices.length)
+  }
+
+  // 添加uv
+  const { baseTexture, crop } = fillStyle.texture
+  const { vertexStart, vertexCount } = batchPart
+  if (fillStyle.texture === Texture.EMPTY) {
+    geometry.uvs.concat(new Array(vertexCount * 2).fill(0))
+  } else {
+    const gvs = geometry.vertices.data
+    for (let i = vertexStart; i < vertexStart + vertexCount; i++) {
+      const x = gvs[i * 2]
+      const y = gvs[i * 2 + 1]
+
+      geometry.uvs.push((x + crop.x) / baseTexture.width)
+      geometry.uvs.push((y + crop.y) / baseTexture.height)
+    }
   }
 }

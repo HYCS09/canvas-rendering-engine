@@ -3,7 +3,6 @@ import { DisplayObject } from './DisplayObject'
 import { Point, Transform } from '@/math'
 import { BatchRenderer } from '@/renderer/BatchRenderer'
 import { CanvasRenderer } from '@/renderer/CanvasRenderer'
-import { WebGLRenderer } from '@/renderer/WebGLRenderer'
 
 export class Container extends DisplayObject {
   public type = 'container'
@@ -41,18 +40,11 @@ export class Container extends DisplayObject {
   }
 
   /**
-   * 使用webGL，渲染自身，在container上面没有东西要渲染，所以这个函数的内容为空
-   */
-  protected renderWebGL(renderer: WebGLRenderer) {
-    // nothing
-  }
-
-  /**
    * 使用canvas2D，递归渲染以自身为根的整棵节点树
    */
   public renderCanvasRecursive(renderer: CanvasRenderer) {
     // 如果visible为false，那么自身以及自身的所有子节点都不用渲染
-    if (!this.visible) {
+    if (!this.visible || this.worldAlpha <= 0) {
       return
     }
 
@@ -64,34 +56,19 @@ export class Container extends DisplayObject {
   }
 
   /**
-   * 使用webGL，递归渲染以自身为根的整棵节点树
+   * 递归更新当前元素以及所有子元素的transform
    */
-  public renderWebGLRecursive(renderer: WebGLRenderer) {
+  public updateTransform() {
     if (!this.visible) {
       return
     }
 
-    this.renderWebGL(renderer)
-
-    for (let i = 0; i < this.children.length; i++) {
-      this.children[i].renderWebGLRecursive(renderer)
-    }
-  }
-
-  /**
-   * 递归更新当前元素以及所有子元素的transform
-   */
-  public updateTransform() {
     this.sortChildren()
-
-    const parentTransform = this.parent?.transform || new Transform()
-    this.transform.updateTransform(parentTransform)
 
     this.worldAlpha = (this.parent?.worldAlpha ?? 1) * this.alpha
 
-    if (this.worldAlpha <= 0 || !this.visible) {
-      return
-    }
+    const parentTransform = this.parent?.transform || new Transform()
+    this.transform.updateTransform(parentTransform)
 
     for (let i = 0; i < this.children.length; i++) {
       this.children[i].updateTransform()
@@ -160,9 +137,23 @@ export class Container extends DisplayObject {
   }
 
   /**
-   * 更新自身的所有batch对应的大数组中的顶点
+   * 更新自身的顶点坐标和透明度
    */
-  public updateBatches(floatView: Float32Array) {
-    // nothing
+  public updateBatches(floatView: Float32Array, intView: Uint32Array): void {
+    if (this.worldId !== this.transform.worldId) {
+      this.worldId = this.transform.worldId
+
+      for (let i = 0; i < this.batchCount; i++) {
+        this.batches[i].updateVertices(floatView)
+      }
+    }
+
+    if (this.alphaDirty) {
+      this.alphaDirty = false
+
+      for (let i = 0; i < this.batchCount; i++) {
+        this.batches[i].updateAlpha(intView)
+      }
+    }
   }
 }

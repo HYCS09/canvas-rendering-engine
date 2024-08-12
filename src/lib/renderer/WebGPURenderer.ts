@@ -3,9 +3,13 @@ import {
   vertexShaderSource,
   fragmentShaderSource
 } from './utils/webgpu/shaders'
-import { BYTES_PER_VERTEX } from '@/constants'
+import { BYTES_PER_VERTEX, MAX_TEXTURES_COUNT, SAMPLE_COUNT } from '@/constants'
 import { toRgbArray } from '@/utils/color'
 import { BatchRenderer } from './BatchRenderer'
+import { DrawCall } from './utils/batch/DrawCall'
+import { Texture } from '@/texture'
+
+const bindGroupCache: Record<string, GPUBindGroup> = {}
 
 export class WebGPURenderer extends BatchRenderer {
   private gpu: GPUCanvasContext
@@ -13,6 +17,7 @@ export class WebGPURenderer extends BatchRenderer {
   private pipeline!: GPURenderPipeline
   private renderPassDescriptor!: GPURenderPassDescriptor
   private options: IApplicationOptions
+  private sampler!: GPUSampler
 
   /**
    * 顶点的webGPU buffer
@@ -68,6 +73,15 @@ export class WebGPURenderer extends BatchRenderer {
     this.setRootTransform(1, 0, 0, 1, 0, 0)
 
     this.setProjectionMatrix()
+
+    this.sampler = this.device.createSampler({
+      addressModeU: 'repeat',
+      addressModeV: 'repeat',
+      addressModeW: 'repeat',
+      magFilter: 'linear',
+      minFilter: 'linear',
+      mipmapFilter: 'linear'
+    })
   }
 
   protected draw(): void {
@@ -78,7 +92,6 @@ export class WebGPURenderer extends BatchRenderer {
       gpuIndexBuffer,
       gpu,
       uniformBindGroup,
-      indexCount,
       pipeline
     } = this
 
@@ -91,14 +104,25 @@ export class WebGPURenderer extends BatchRenderer {
 
     const renderPass = commandEncoder.beginRenderPass(renderPassDescriptor)
 
-    renderPass.setPipeline(pipeline)
-
+    // 设置顶点数组和顶点下标数组
     renderPass.setVertexBuffer(0, gpuVertexBuffer)
     renderPass.setIndexBuffer(gpuIndexBuffer, 'uint32')
 
+    // 设置投影矩阵和stage的变换矩阵
     renderPass.setBindGroup(0, uniformBindGroup)
 
-    renderPass.drawIndexed(indexCount)
+    for (let i = 0; i < this.drawCallCount; i++) {
+      const drawCall = this.drawCalls[i]
+
+      const { start, size } = drawCall
+
+      const bindGroup = this.getBindGroup(drawCall)
+
+      renderPass.setPipeline(pipeline)
+      renderPass.setBindGroup(1, bindGroup)
+
+      renderPass.drawIndexed(size, 1, start)
+    }
 
     renderPass.end()
 
@@ -107,6 +131,44 @@ export class WebGPURenderer extends BatchRenderer {
     device.queue.submit([commandBuffer])
   }
 
+  private getBindGroup(drawCall: DrawCall) {
+    const { bindGroupKey, texCount, baseTextures } = drawCall
+
+    if (!bindGroupCache[bindGroupKey]) {
+      const entries: GPUBindGroupDescriptor['entries'] = [
+        {
+          binding: 0,
+          resource: this.sampler
+        }
+      ]
+
+      for (let i = 0; i < texCount; i++) {
+        const baseTexture = baseTextures[i]
+        if (!baseTexture.gpuTexture) {
+          baseTexture.createGpuTexture(this.device)
+          baseTexture.gpuUpload(this.device)
+        }
+
+        // @ts-ignore
+        entries.push({
+          binding: i + 1,
+          resource: baseTexture.gpuTexture!.createView()
+        })
+      }
+
+      bindGroupCache[bindGroupKey] = this.device.createBindGroup({
+        label: `my-bind-group-${bindGroupKey}`,
+        layout: this.pipeline.getBindGroupLayout(1),
+        entries
+      })
+    }
+
+    return bindGroupCache[bindGroupKey]
+  }
+
+  /**
+   * 创建投影矩阵和stage的变换矩阵对应的gpu buffer
+   */
   private initUniformBindGroup() {
     const device = this.device
 
@@ -140,6 +202,9 @@ export class WebGPURenderer extends BatchRenderer {
     })
   }
 
+  /**
+   * 创建顶点数组和顶点下标数组的gpu buffer
+   */
   private initGpuBuffer() {
     const device = this.device
 
@@ -252,9 +317,19 @@ export class WebGPURenderer extends BatchRenderer {
                 offset: 0
               },
               {
-                shaderLocation: 1, // @location(1) a_color
-                format: 'unorm8x4', // 读4个UInt8并且正交化
+                shaderLocation: 1, // @location(1) a_uv
+                format: 'float32x2', // 读2个Float32，不用正交化
                 offset: 2 * Float32Array.BYTES_PER_ELEMENT
+              },
+              {
+                shaderLocation: 2, // @location(2) a_color
+                format: 'unorm8x4', // 读4个UInt8并且正交化
+                offset: 4 * Float32Array.BYTES_PER_ELEMENT
+              },
+              {
+                shaderLocation: 3, // @location(3) a_texture_id_etc
+                format: 'uint8x4', // 读4个UInt8，不用正交化
+                offset: 5 * Float32Array.BYTES_PER_ELEMENT
               }
             ]
           }
@@ -283,6 +358,9 @@ export class WebGPURenderer extends BatchRenderer {
             }
           }
         ]
+      },
+      multisample: {
+        count: SAMPLE_COUNT
       },
       primitive: {
         topology: 'triangle-list'

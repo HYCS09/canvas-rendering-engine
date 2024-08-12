@@ -30,6 +30,11 @@ export class GraphicsGeometry {
    */
   public indices = new CustomIntArray()
 
+  /**
+   * uv坐标，每2个元素代表一个顶点
+   */
+  public uvs = new CustomFloatArray()
+
   constructor() {}
 
   public drawShape(shape: Shape, fillStyle: FillStyle, lineStyle: LineStyle) {
@@ -87,5 +92,6 @@ export class GraphicsGeometry {
     this.batchParts.length = 0
     this.vertices.clear()
     this.indices.clear()
+    this.uvs.clear()
   }
 }

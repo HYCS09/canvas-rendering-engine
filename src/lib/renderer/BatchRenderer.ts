@@ -2,9 +2,13 @@ import { Container } from '@/display'
 import { IApplicationOptions } from '@/types'
 import { Renderer } from './Renderer'
 import { Batch, batchPool } from '@/batch'
-import { BYTES_PER_VERTEX } from '@/constants'
+import { BYTES_PER_VERTEX, MAX_TEXTURES_COUNT } from '@/constants'
 import { buildArray } from './utils/batch/buildArray'
 import { updateArray } from './utils/batch/updateArray'
+import { DrawCall } from './utils/batch/DrawCall'
+import { Texture } from '@/texture'
+
+let globalTick = 0
 
 export abstract class BatchRenderer extends Renderer {
   /**
@@ -17,8 +21,25 @@ export abstract class BatchRenderer extends Renderer {
    */
   protected indexCount = 0
 
+  /**
+   * 所有batch
+   */
   protected batches: Batch[] = []
+
+  /**
+   * batch数量
+   */
   protected batchesCount = 0
+
+  /**
+   * 所有的drawCall对象
+   */
+  protected drawCalls: DrawCall[] = []
+
+  /**
+   * drawCall对象数量
+   */
+  protected drawCallCount = 0
 
   /**
    * 顶点数组float32视图
@@ -70,6 +91,7 @@ export abstract class BatchRenderer extends Renderer {
     this.vertexCount = 0
     this.indexCount = 0
     this.batchesCount = 0
+    this.drawCallCount = 0
     batchPool.reset()
   }
 
@@ -94,18 +116,74 @@ export abstract class BatchRenderer extends Renderer {
   }
 
   /**
-   * 将数据打包到大数组里
+   * 将数据打包到大数组里并且构建draw call
    */
   protected packData() {
+    let drawCall = (this.drawCalls[this.drawCallCount] ??= new DrawCall())
+    drawCall.texCount = 0
+
+    let lastBatch = this.batches[0]
+
     for (let i = 0; i < this.batchesCount; i++) {
       const batch = this.batches[i]
 
-      // @ts-ignore
-      this.batches[i] = null
+      lastBatch = this.batches[i]
+
+      const baseTexture = batch.texture.baseTexture
+
+      if (baseTexture.drawCallTick !== globalTick) {
+        // 如果塞满了16张texture，则需要进入到下一个draw call
+        if (drawCall.texCount >= MAX_TEXTURES_COUNT) {
+          // 首先计算出这次draw call需要绘制哪些顶点
+          const lastDrawCall = this.drawCalls[this.drawCallCount - 1]
+          const start = lastDrawCall
+            ? lastDrawCall.start + lastDrawCall.size
+            : 0
+          const size = batch.indexStart + batch.indexCount - start
+          drawCall.start = start
+          drawCall.size = size
+          drawCall.updateBindGroupKey()
+
+          // 进入下一个draw call
+          this.drawCallCount++
+          drawCall = this.drawCalls[this.drawCallCount] ??= new DrawCall()
+          drawCall.texCount = 0
+
+          globalTick++
+        }
+
+        baseTexture.drawCallTick = globalTick
+
+        drawCall.baseTextures[drawCall.texCount] = baseTexture
+        baseTexture.gpuLocation = drawCall.texCount
+        drawCall.texCount++
+      }
 
       batch.packVertices(this.vertFloatView, this.vertIntView)
       batch.packIndices(this.indexBuffer)
     }
+
+    if (drawCall.texCount > 0) {
+      const lastDrawCall = this.drawCalls[this.drawCallCount - 1]
+      const start = lastDrawCall ? lastDrawCall.start + lastDrawCall.size : 0
+      const size = lastBatch.indexStart + lastBatch.indexCount - start
+      drawCall.start = start
+      drawCall.size = size
+
+      // 补充空白
+      if (drawCall.texCount < MAX_TEXTURES_COUNT) {
+        const diff = MAX_TEXTURES_COUNT - drawCall.texCount
+        for (let i = 0; i < diff; i++) {
+          drawCall.baseTextures[drawCall.texCount] = Texture.EMPTY.baseTexture
+          drawCall.texCount++
+        }
+      }
+      drawCall.updateBindGroupKey()
+
+      this.drawCallCount++
+    }
+
+    globalTick++
   }
 
   /**
@@ -114,7 +192,7 @@ export abstract class BatchRenderer extends Renderer {
   protected abstract draw(): void
 
   /**
-   * 更新更新vertex buffer和index buffer
+   * 更新vertex buffer和index buffer
    */
   protected abstract updateBuffer(): void
 
@@ -176,7 +254,7 @@ export abstract class BatchRenderer extends Renderer {
 
       Renderer.needBuildArr = false
     } else {
-      updateArray(this.vertFloatView, rootContainer)
+      updateArray(this.vertFloatView, this.vertIntView, rootContainer)
     }
 
     this.updateBuffer()
